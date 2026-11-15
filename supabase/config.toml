@@ -1,0 +1,17 @@
+# Supabase CLI settings used only by the GitHub Action that deploys the fd- edge functions.
+project_id = "derivatives"
+
+[functions.fd-grade]
+verify_jwt = true
+[functions.fd-grade-quiz]
+verify_jwt = true
+[functions.fd-grade-attempt]
+verify_jwt = true
+[functions.fd-ai-grade]
+verify_jwt = true
+[functions.fd-enroll-student]
+verify_jwt = true
+[functions.fd-admin-roster]
+verify_jwt = true
+[functions.fd-notify-prof-request]
+verify_jwt = true
