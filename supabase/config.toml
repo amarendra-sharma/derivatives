@@ -15,3 +15,7 @@ verify_jwt = true
 verify_jwt = true
 [functions.fd-notify-prof-request]
 verify_jwt = true
+[functions.fd-ai-instructor]
+verify_jwt = true
+[functions.fd-ai-autopilot]
+verify_jwt = false

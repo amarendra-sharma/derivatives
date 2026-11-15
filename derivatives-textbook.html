@@ -5350,6 +5350,8 @@ function hideAllPages() {
   for (i = 0; i < pages.length; i++) { pages[i].style.display = "none"; }
 }
 
+var PAGE_STASH = {};
+
 function showChapter(id) {
   currentChapterId = id;
   hideAllPages();
@@ -5357,6 +5359,11 @@ function showChapter(id) {
 
   var isChapter = id.indexOf("ch") === 0;
 
+  if (isChapter && isUnlocked(id) && (id in PAGE_STASH)) {
+    var stashed = document.getElementById("page-" + id);
+    if (stashed) { stashed.innerHTML = PAGE_STASH[id]; }
+    delete PAGE_STASH[id];
+  }
   if (isChapter && !isUnlocked(id)) {
     renderPaywall(id);
   } else if (isChapter && !BUILT[id]) {
@@ -5444,6 +5451,8 @@ function renderPaywall(chId) {
   s += '<a class="btn-tb btn-tb-primary" href="index.html" style="display:inline-block;text-decoration:none;">Subscribe to unlock</a>';
   s += '<div style="margin-top:1rem;"><button class="btn-tb btn-tb-ghost" onclick="showChapter(\'ch1\')">Back to the free preview</button></div>';
   s += '</div>';
+  if (!(chId in PAGE_STASH)) { PAGE_STASH[chId] = page.innerHTML; }
+  if (!FD_ACCESS_RESOLVED) { s = '<div class="tb-paywall"><p>Checking your course access\u2026</p></div>'; }
   page.innerHTML = s;
 }
 

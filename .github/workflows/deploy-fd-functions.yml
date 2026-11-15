@@ -21,7 +21,7 @@ jobs:
           version: latest
       - name: Deploy
         run: |
-          for f in fd-grade fd-grade-quiz fd-grade-attempt fd-ai-grade fd-enroll-student fd-admin-roster fd-notify-prof-request; do
+          for f in fd-grade fd-grade-quiz fd-grade-attempt fd-ai-grade fd-enroll-student fd-admin-roster fd-notify-prof-request fd-ai-instructor fd-ai-autopilot; do
             echo "::group::$f"
             supabase functions deploy "$f" --project-ref "$PROJECT_REF" --yes
             echo "::endgroup::"

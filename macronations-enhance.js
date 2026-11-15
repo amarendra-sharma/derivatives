@@ -262,3 +262,21 @@
     }
   });
 })();
+
+/* MacroNations AI instructor (Asha) for Financial Derivatives. Loaded from here so replacing index.html cannot remove it.
+   The widget code is shared with Microeconomics and loaded from there (text chat, whiteboard, graded-work review).
+   Voice/avatar (talk mode) runs from the model files in /ai-instructor/talk/ on THIS site (workers must be same-origin).
+   Every Derivatives course is listed ('*'); each course's own Asha settings (fd_ai_settings) still decide what is on. */
+(function () {
+  try {
+    if (window.__aiInstructorHook) return; window.__aiInstructorHook = true;
+    var base = 'https://microeconomics.macronations.com/ai-instructor/';
+    var fn = 'https://rtaiivegcqqmdchpguzn.supabase.co/functions/v1/fd-ai-instructor';
+    var all = ['*'];
+    window.AI_INSTRUCTOR_CONFIG = { supabaseUrl: 'https://rtaiivegcqqmdchpguzn.supabase.co', functionUrl: fn };
+    window.AI_INSTRUCTOR_WIDGET = { courseIds: all, talkCourseIds: all, talkBase: location.origin + '/ai-instructor/talk/', functionUrl: fn, enrollTable: 'fd_enrollment', courseTable: 'fd_course' };
+    ['widget.js', 'teach-panel.js'].forEach(function (f) {
+      var s = document.createElement('script'); s.type = 'module'; s.src = base + f + '?v=20261101b'; document.head.appendChild(s);
+    });
+  } catch (e) {}
+})();

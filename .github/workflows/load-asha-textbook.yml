@@ -1,0 +1,36 @@
+# Loads the Financial Derivatives textbook into Asha's search index (fd_ai_chunks), one chapter per file.
+# Each file calls fd_ai_upsert_chunks(), which replaces only that chapter, so re-running is safe.
+# Runs when the chapter files change on main, or by hand from the Actions tab. Uses the SUPABASE_ACCESS_TOKEN secret.
+# To refresh after a textbook edit: run lms/asha/tools/ingest-fd.py and copy content/sql/*.sql into supabase/sql/asha-content/.
+name: Load Asha textbook
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['supabase/sql/asha-content/**']
+concurrency: load-asha-textbook
+jobs:
+  load:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      PROJECT_REF: rtaiivegcqqmdchpguzn
+    steps:
+      - uses: actions/checkout@v4
+      - name: Load chapters
+        run: |
+          set -euo pipefail
+          for f in supabase/sql/asha-content/ch*.sql; do
+            jq -Rs '{query: .}' "$f" > /tmp/body.json
+            code=$(curl -sS -o /tmp/out.json -w '%{http_code}' -X POST "https://api.supabase.com/v1/projects/$PROJECT_REF/database/query" \
+              -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H 'Content-Type: application/json' --data-binary @/tmp/body.json)
+            echo "$f -> HTTP $code $(head -c 200 /tmp/out.json)"
+            if [ "$code" -ge 300 ]; then exit 1; fi
+          done
+      - name: Link the textbook to every Derivatives course
+        run: |
+          set -euo pipefail
+          q="insert into public.fd_ai_course_sources (course_id, source_id) select c.id, 'fd-textbook' from public.fd_course c where exists (select 1 from public.fd_ai_sources where id = 'fd-textbook') on conflict do nothing; insert into public.fd_ai_settings (course_id, enabled, professor_mode) select id, true, true from public.fd_course on conflict (course_id) do nothing; select (select count(*) from public.fd_ai_chunks) as chunks, (select count(*) from public.fd_ai_course_sources) as linked_courses;"
+          jq -n --arg q "$q" '{query: $q}' > /tmp/body.json
+          curl -sS -X POST "https://api.supabase.com/v1/projects/$PROJECT_REF/database/query" \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H 'Content-Type: application/json' --data-binary @/tmp/body.json
