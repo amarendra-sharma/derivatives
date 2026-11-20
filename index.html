@@ -651,16 +651,16 @@ var STUDENT_CHAPTERS = [
   {n:4,title:'Pricing Forwards and Futures',mins:50,slug:'carry-desk'},
   {n:5,title:'Hedging with Futures',mins:50,slug:'hedge-desk'},
   {n:6,title:'Interest Rate Futures and Forward Rate Agreements',mins:50,slug:'rates-desk'},
-  {n:7,title:'Swaps',mins:50,slug:''},
-  {n:8,title:'Option Markets and the Properties of Option Prices',mins:50,slug:''},
-  {n:9,title:'Trading Strategies with Options',mins:50,slug:''},
-  {n:10,title:'The Binomial Model',mins:55,slug:''},
-  {n:11,title:'Stochastic Processes and It\u00f4\u2019s Lemma',mins:55,slug:''},
-  {n:12,title:'The Black\u2013Scholes\u2013Merton Model',mins:55,slug:''},
-  {n:13,title:'Options on Indices, Currencies, and Futures',mins:50,slug:''},
-  {n:14,title:'The Greeks and Dynamic Hedging',mins:55,slug:''},
-  {n:15,title:'Volatility Smiles and the Volatility Surface',mins:50,slug:''},
-  {n:16,title:'Numerical Methods: Trees, Simulation, and Finite Differences',mins:55,slug:''}
+  {n:7,title:'Swaps',mins:50,slug:'swap-desk'},
+  {n:8,title:'Option Markets and the Properties of Option Prices',mins:50,slug:'bounds-parity'},
+  {n:9,title:'Trading Strategies with Options',mins:50,slug:'strategy-architect'},
+  {n:10,title:'The Binomial Model',mins:55,slug:'tree-builder'},
+  {n:11,title:'Stochastic Processes and It\u00f4\u2019s Lemma',mins:55,slug:'path-lab'},
+  {n:12,title:'The Black\u2013Scholes\u2013Merton Model',mins:55,slug:'pricing-desk'},
+  {n:13,title:'Options on Indices, Currencies, and Futures',mins:50,slug:'pricing-desk'},
+  {n:14,title:'The Greeks and Dynamic Hedging',mins:55,slug:'delta-hedge'},
+  {n:15,title:'Volatility Smiles and the Volatility Surface',mins:50,slug:'vol-surface'},
+  {n:16,title:'Numerical Methods: Trees, Simulation, and Finite Differences',mins:55,slug:'monte-carlo-lab'}
 ];
 /* Chapters 19-26 of the textbook. They are NOT part of STUDENT_CHAPTERS and not
    part of N_CHAPTERS, so nothing here touches a grade denominator, a quiz
@@ -674,12 +674,21 @@ var ARENA_FILE = {
   'margin-desk':'margin-desk.html',
   'rates-desk':'rates-desk.html',
   'carry-desk':'carry-desk.html',
-  'hedge-desk':'hedge-desk.html'
+  'hedge-desk':'hedge-desk.html',
+  'swap-desk':'swap-desk.html',
+  'bounds-parity':'bounds-parity.html',
+  'strategy-architect':'strategy-architect.html',
+  'tree-builder':'tree-builder.html',
+  'path-lab':'path-lab.html',
+  'pricing-desk':'pricing-desk.html',
+  'delta-hedge':'delta-hedge.html',
+  'vol-surface':'vol-surface.html',
+  'monte-carlo-lab':'monte-carlo-lab.html'
 };
 // Canonical list of graded arenas (the denominator for the arena grade component).
 // Unplayed arenas contribute 0, so partial completion earns partial credit.
 // These slugs must match fd_arena_config.arena_slug exactly.
-var ARENA_SLUGS = ['payoff-lab', 'margin-desk', 'rates-desk', 'carry-desk', 'hedge-desk'];
+var ARENA_SLUGS = ['payoff-lab', 'margin-desk', 'rates-desk', 'carry-desk', 'hedge-desk', 'swap-desk', 'bounds-parity', 'strategy-architect', 'tree-builder', 'path-lab', 'pricing-desk', 'delta-hedge', 'vol-surface', 'monte-carlo-lab'];
 var ARENA_MAX_ATTEMPTS = 2;   // only the first N attempts per arena count toward the grade
 
 // Performance-based arena score for the grade. Given all of a student's arena
@@ -807,7 +816,16 @@ var ARENA_TITLE = {
   'margin-desk':'Margin Desk',
   'rates-desk':'Rates Desk',
   'carry-desk':'Carry Arbitrage Desk',
-  'hedge-desk':'Hedge Desk'
+  'hedge-desk':'Hedge Desk',
+  'swap-desk':'Swap Desk',
+  'bounds-parity':'Bounds & Parity',
+  'strategy-architect':'Strategy Architect',
+  'tree-builder':'Tree Builder',
+  'path-lab':'Path Lab',
+  'pricing-desk':'Pricing Desk',
+  'delta-hedge':'Delta-Hedging Simulator',
+  'vol-surface':'Vol Surface Lab',
+  'monte-carlo-lab':'Monte Carlo Lab'
 };
 var State = { user:null, profile:null, role:'student', courses:[], currentCourseId:null, settings:null, signup:false, selfCourseId:null, payCourseId:null, hasAccess:false, currentItem:null, selectedOption:null };
 
