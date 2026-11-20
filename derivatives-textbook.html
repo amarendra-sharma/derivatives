@@ -5105,8 +5105,609 @@ html.a11y-cb { --accent: #0072B2; --accent-mid: #3a93cc; --accent-lt: #e1f0f9; -
   </div>
 </div>
 
-<div id="page-ch17" style="display:none;"></div>
-<div id="page-ch18" style="display:none;"></div>
+<!-- ═══ CHAPTER 17 ═══ -->
+<div id="page-ch17" style="display:none;">
+  <div class="tb-chapter-eyebrow">Chapter 17 &middot; Part VI: Extensions</div>
+  <h1 class="tb-chapter-title">Credit Derivatives and Counterparty Risk</h1>
+  <p class="tb-chapter-subtitle">The measurement of the probability of default, the credit default swap and its valuation, the instruments built on it, and the risk that the counterparty to a derivative fails to pay</p>
+  <hr class="tb-chapter-divider">
+
+  <div class="tb-objectives">
+    <div class="tb-objectives-label">Learning objectives</div>
+    <p>After completing this chapter, the reader should be able to:</p>
+    <ol>
+      <li>compute survival probabilities and probabilities of default from a hazard rate;</li>
+      <li>estimate the hazard rate of a company from the spread on its bonds and the expected recovery rate, and distinguish risk-neutral from real-world probabilities of default;</li>
+      <li>describe the cash flows of a credit default swap, including its settlement when a default occurs;</li>
+      <li>value a credit default swap, compute its spread, and mark an existing swap to market;</li>
+      <li>describe credit indices, total return swaps, and collateralized debt obligations;</li>
+      <li>compute the credit value adjustment of a derivative and explain the effects of netting and collateral;</li>
+      <li><span class="tb-star">&#9733;</span> derive the relation between the spread of a credit default swap, the hazard rate, and the recovery rate.</li>
+    </ol>
+  </div>
+
+  <div class="tb-decision">
+    <div class="tb-decision-label">&#9881; Decision &mdash; choose first; the theory follows</div>
+    <h4>What does the market say about default?</h4>
+    <p class="tb-decision-intro">Five-year bonds issued by Northwind yield 1.5 percentage points more than five-year Treasury bonds. Bondholders expect to recover 40 percent of the face value of the bonds if Northwind defaults. Approximately what probability of default per year does the market assign to Northwind?</p>
+    <div class="tb-seg" role="group" aria-label="Probability of default per year">
+      <button class="btn-tb btn-tb-ghost" id="cd-0" onclick="cdPick(0)">0.6 percent</button>
+      <button class="btn-tb btn-tb-ghost" id="cd-1" onclick="cdPick(1)">1.5 percent</button>
+      <button class="btn-tb btn-tb-ghost" id="cd-2" onclick="cdPick(2)">2.5 percent</button>
+    </div>
+    <div class="tb-readout" id="cd-readout" aria-live="polite">Select a probability.</div>
+  </div>
+
+  <h2 class="tb-section">17.1 &nbsp;Credit risk and the probability of default</h2>
+  <p><strong>Credit risk</strong> is the risk of loss because a borrower or a counterparty fails to make a payment that it owes. The preceding chapters have assumed that every party to a contract pays what it owes. This chapter removes the assumption. It considers two questions: how the probability that a company defaults is measured, and how derivatives are used to transfer the risk of default from one party to another. It then considers the credit risk that arises in derivatives themselves, when the party on the other side of a contract fails.</p>
+  <p>The probability of default is described most conveniently by a hazard rate. Let \(Q(t)\) be the probability that a company survives, that is, does not default, until time \(t\). The <strong>hazard rate</strong> \(\lambda\) is defined so that \(\lambda\,\Delta t\) is the probability of default in a short interval \(\Delta t\), conditional on no earlier default. The probability of surviving the interval is therefore \(1-\lambda\Delta t\), and \(Q(t+\Delta t)=Q(t)(1-\lambda\Delta t)\). In the limit this gives \(dQ/dt=-\lambda Q\), whose solution, when the hazard rate is constant, is an exponential.</p>
+  <div class="tb-result">
+    <div class="tb-result-label">Result 17.1 &mdash; Survival and default</div>
+    <p>With a constant hazard rate \(\lambda\), the probability of survival to time \(t\) is \[ Q(t)=e^{-\lambda t}, \] and the probability of default by time \(t\) is \(1-e^{-\lambda t}\). The unconditional probability of default between times \(t_1\) and \(t_2\) is \(Q(t_1)-Q(t_2)=e^{-\lambda t_1}-e^{-\lambda t_2}\). When the hazard rate varies with time, \(\lambda t\) is replaced by \(\bar\lambda(t)\,t\), where \(\bar\lambda(t)\) is the average hazard rate between time zero and time \(t\).</p>
+  </div>
+  <p>Two probabilities must be distinguished. The <strong>unconditional</strong> probability of default in the third year is the probability, as seen today, that the company defaults during that year. The <strong>conditional</strong> probability of default in the third year is the probability that it defaults during the year given that it has survived the first two. The second is the first divided by the probability of survival to the start of the year. With a constant hazard rate the conditional probability of default in each year is the same, \(1-e^{-\lambda}\), and the unconditional probability declines from year to year, because fewer companies remain to default.</p>
+
+  <div class="tb-worked">
+    <div class="tb-worked-label">Worked example 17.1 &mdash; Probabilities from a hazard rate</div>
+    <div class="tb-worked-q">The hazard rate of a company is 2 percent per year. Find the probability that it survives five years, the unconditional probability that it defaults in the third year, and the probability of default in the third year conditional on survival for two years.</div>
+    <div class="tb-worked-step"><div class="tb-worked-step-num">1</div><div class="tb-worked-step-text"><b>Survival.</b> \(Q(5)=e^{-0.02\times5}=e^{-0.10}=0.9048\). The probability of default within five years is 0.0952.</div></div>
+    <div class="tb-worked-step"><div class="tb-worked-step-num">2</div><div class="tb-worked-step-text"><b>Unconditional probability for the third year.</b> \(Q(2)-Q(3)=e^{-0.04}-e^{-0.06}=0.96079-0.94176=0.01902\).</div></div>
+    <div class="tb-worked-step"><div class="tb-worked-step-num">3</div><div class="tb-worked-step-text"><b>Conditional probability.</b> \(0.01902/0.96079=0.01980=1-e^{-0.02}\). It equals the conditional probability for every other year, and is slightly less than the hazard rate itself.</div></div>
+  </div>
+
+  <h2 class="tb-section">17.2 &nbsp;Default probabilities from bond prices</h2>
+  <p>A bond issued by a company provides a higher yield than a bond with the same cash flows issued by the government, because the holder bears the risk of default. The excess of the yield on the corporate bond over the yield on the risk-free bond is the <strong>credit spread</strong>. When a company defaults, bondholders do not usually lose everything. The <strong>recovery rate</strong> \(R\) is the value of a bond shortly after a default, as a proportion of its face value. Recovery rates on senior unsecured bonds have averaged about 40 percent.</p>
+  <p>The credit spread compensates the holder for the expected loss from default. In a short interval \(\Delta t\), the probability of default is \(\lambda\Delta t\) and the proportion of the value of the bond that is lost on default is approximately \(1-R\). The expected loss per unit of time is \(\lambda(1-R)\), and the spread must equal it.</p>
+  <div class="tb-result">
+    <div class="tb-result-label">Result 17.2 &mdash; The hazard rate implied by a credit spread</div>
+    <p>If \(s\) is the credit spread of a bond and \(R\) the expected recovery rate, the average hazard rate over the life of the bond is approximately \[ \bar\lambda=\frac{s}{1-R}. \]</p>
+  </div>
+  <p>This answers the opening question. A spread of 1.5 percent and a recovery rate of 40 percent imply \(\bar\lambda=0.015/0.6=0.025\), a hazard rate of 2.5 percent per year. The spread itself, 1.5 percent, is not the probability of default: it is the expected loss, which is the probability multiplied by the proportion lost. The figure 0.6 percent multiplies by the loss rather than divides.</p>
+
+  <h3 class="tb-subsection">Real-world and risk-neutral probabilities</h3>
+  <p>Probabilities of default can also be estimated from history. Rating agencies publish the proportion of companies with each rating that defaulted within one, five, or ten years. For companies rated A, the historical rate of default has been roughly one tenth of the rate implied by their bond spreads. The two estimates differ because they answer different questions. The estimate from bond prices is a <strong>risk-neutral</strong> probability: it is the probability that values the bond correctly when expected cash flows are discounted at the risk-free rate. Investors require compensation for bearing credit risk beyond the expected loss. Defaults cluster in recessions, when losses are hardest to bear, and the risk cannot be diversified away. Corporate bonds are also less liquid than government bonds. These premiums are part of the spread, and Result 17.2 attributes them to default.</p>
+  <div class="tb-pitfall">
+    <div class="tb-pitfall-label">Common error</div>
+    <p>The two probabilities have different uses, and they should not be exchanged. The risk-neutral probability is the correct one for valuing a credit derivative, because valuation proceeds by Principle 10.1, as for every other derivative in this book. The real-world probability is the correct one for estimating the losses that a portfolio will actually suffer, as in the calculation of value at risk in Chapter 13. A bank that used risk-neutral probabilities to forecast its credit losses would greatly overstate them; one that used real-world probabilities to price credit protection would sell it far too cheaply.</p>
+  </div>
+
+  <div class="tb-check" data-check="cc17-1">
+    <div class="tb-check-label">Concept check 17.1</div>
+    <p class="tb-check-q">A company's bonds yield 200 basis points over Treasury bonds, and the expected recovery rate is 50 percent. Its historical default rate, for companies of its rating, is 0.5 percent per year. Which statement is correct?</p>
+    <button class="tb-check-opt" data-explain="The two estimates differ in kind, not by error. The bond spread includes compensation for undiversifiable risk and illiquidity as well as for the expected loss.">The bond market has made an error, since the risk-neutral hazard rate of 4 percent is eight times the historical rate.</button>
+    <button class="tb-check-opt" data-correct="1" data-explain="Correct. The risk-neutral hazard rate is 0.02/0.5 = 4 percent. It exceeds the real-world rate because investors demand compensation for bearing credit risk beyond its expected cost. The risk-neutral rate is used to value credit derivatives.">The risk-neutral hazard rate is 4 percent, and it is the rate to use in valuing a credit default swap on the company.</button>
+    <button class="tb-check-opt" data-explain="Result 17.2 divides the spread by 1 − R; with R = 0.5 the hazard rate is 4 percent, not 1 percent.">The risk-neutral hazard rate is 1 percent, close to the historical rate.</button>
+    <div class="tb-check-fb" aria-live="polite"></div>
+  </div>
+
+  <h2 class="tb-section">17.3 &nbsp;Credit default swaps</h2>
+  <p>A <strong>credit default swap</strong> (CDS) is a contract that provides insurance against the default of a particular company, the <strong>reference entity</strong>. The buyer of protection makes periodic payments to the seller of protection until the end of the life of the swap or until a default by the reference entity, whichever is earlier. If the reference entity defaults, the seller pays the buyer the loss on a specified amount of the reference entity's bonds, the <strong>notional principal</strong>. The annual payment, as a proportion of the notional principal, is the <strong>CDS spread</strong>.</p>
+  <p>A default, called a <strong>credit event</strong>, includes failure to make a payment when it is due, bankruptcy, and certain restructurings of debt. When a credit event occurs, the swap is settled in one of two ways. In <strong>physical settlement</strong> the buyer delivers bonds of the reference entity with a face value equal to the notional principal and receives the face value in cash. In <strong>cash settlement</strong> the seller pays the notional principal multiplied by \(1-R\), where \(R\) is the recovery rate, the price of the bonds per dollar of face value shortly after the event. Since 2009 the recovery rate has been set, for most swaps, by an auction organized by the industry among dealers a few weeks after the credit event. The buyer also pays the part of the periodic payment that has accrued since the last payment date, since protection was provided for that period.</p>
+
+  <div class="tb-worked">
+    <div class="tb-worked-label">Worked example 17.2 &mdash; Settlement on default</div>
+    <div class="tb-worked-q">A pension fund buys five-year protection on Northwind with a notional principal of $10 million, at a CDS spread of 120 basis points, payable quarterly in arrears. Northwind defaults two years and one month after the swap begins. The auction sets the recovery rate at 35 percent. State all the cash flows.</div>
+    <div class="tb-worked-step"><div class="tb-worked-step-num">1</div><div class="tb-worked-step-text"><b>Payments before the default.</b> Each quarterly payment is \(0.0120\times10{,}000{,}000\times0.25=\$30{,}000\). Eight payments are made in the first two years, a total of $240,000.</div></div>
+    <div class="tb-worked-step"><div class="tb-worked-step-num">2</div><div class="tb-worked-step-text"><b>Accrued payment.</b> One month of protection has been provided since the last payment date. The buyer pays \(0.0120\times10{,}000{,}000\times\tfrac{1}{12}=\$10{,}000\).</div></div>
+    <div class="tb-worked-step"><div class="tb-worked-step-num">3</div><div class="tb-worked-step-text"><b>Payment by the seller.</b> \((1-0.35)\times10{,}000{,}000=\$6{,}500{,}000\). Under physical settlement the fund would instead deliver $10 million of face value of Northwind bonds, worth $3.5 million, and receive $10 million, with the same result.</div></div>
+    <div class="tb-worked-step"><div class="tb-worked-step-num">4</div><div class="tb-worked-step-text"><b>Result.</b> A fund that held $10 million of Northwind bonds and the swap has, in effect, converted its holding into a risk-free bond for an annual cost of 1.2 percent. No further payments are made.</div></div>
+  </div>
+
+  <p>A CDS resembles insurance, but it differs in one important respect: the buyer need not own the bonds of the reference entity. A buyer that does not is speculating on a deterioration in the credit of the company, as a holder of a put option speculates on a fall in a share price. The notional principal of swaps on a reference entity can therefore exceed the bonds that it has issued. Physical settlement then obliges buyers to acquire bonds in order to deliver them, which can drive up the price of the bonds after a default; the auction was introduced in part to avoid this.</p>
+
+  <div class="tb-keyterm">
+    <strong>Key terms</strong>
+    <p><b>Reference entity:</b> the company whose default the swap insures. <b>Credit event:</b> a default, as defined in the contract. <b>Notional principal:</b> the face value of bonds covered. <b>CDS spread:</b> the annual payment for protection, as a proportion of the notional principal. <b>Recovery rate:</b> the value of a bond shortly after default, per dollar of face value. <b>Cheapest-to-deliver bond:</b> under physical settlement, the bond of lowest value that the buyer may deliver.</p>
+  </div>
+
+  <h2 class="tb-section">17.4 &nbsp;The valuation of a credit default swap</h2>
+  <p>A CDS is valued, as other swaps are, by computing the present values of its two sets of cash flows in a risk-neutral world. The <strong>premium leg</strong> consists of the payments by the buyer; the <strong>protection leg</strong> consists of the payment by the seller in the event of default. At the start of the swap the spread is set so that the two have the same present value.</p>
+  <p>Consider a swap with a life of \(T\) years and annual payments at the end of each year, and suppose that a default can occur only in the middle of a year. Let \(Q_i\) be the probability of survival to the end of year \(i\), so that \(Q_{i-1}-Q_i\) is the probability of default during year \(i\), and let \(P(t)=e^{-rt}\) be the price of a risk-free zero-coupon bond paying $1 at time \(t\). Per dollar of notional principal and per unit of spread, the expected present value of the regular payments is \(\sum Q_iP(i)\), and that of the accrued payments on default is \(\sum(Q_{i-1}-Q_i)\tfrac12P(i-\tfrac12)\). Their sum, \(A\), is the <strong>risky annuity</strong> or risky duration of the swap. The expected present value of the protection leg is \((1-R)\sum(Q_{i-1}-Q_i)P(i-\tfrac12)\).</p>
+  <div class="tb-result">
+    <div class="tb-result-label">Result 17.3 &mdash; The CDS spread</div>
+    <p>The spread that gives the two legs equal value is \[ s=\frac{(1-R)\sum_{i=1}^{T}(Q_{i-1}-Q_i)\,P(i-\tfrac12)}{\sum_{i=1}^{T}\left[Q_iP(i)+\tfrac12(Q_{i-1}-Q_i)P(i-\tfrac12)\right]}. \] When payments and defaults may occur at any time and the hazard rate is constant, the spread is exactly \[ s=\lambda(1-R). \]</p>
+  </div>
+  <p>The second expression is the relation of Result 17.2 read in reverse, and it is sometimes called the <strong>credit triangle</strong>: any two of the spread, the hazard rate, and the recovery rate determine the third. It is the reason that CDS spreads, like bond spreads, are used to estimate risk-neutral hazard rates. The spreads of swaps are the more reliable source, since they are quoted directly for standard maturities and do not depend on the coupon or the liquidity of a particular bond.</p>
+
+  <div class="tb-worked">
+    <div class="tb-worked-label">Worked example 17.3 &mdash; Computing the spread</div>
+    <div class="tb-worked-q">Find the spread of a five-year CDS with annual payments when the hazard rate is 2 percent, the recovery rate is 40 percent, and the risk-free rate is 5 percent with continuous compounding.</div>
+    <div class="tb-worked-step"><div class="tb-worked-step-num">1</div><div class="tb-worked-step-text"><b>Probabilities.</b>
+      <div class="tb-tablewrap"><table class="tb-table"><thead><tr><th scope="col">Year</th><th scope="col">1</th><th scope="col">2</th><th scope="col">3</th><th scope="col">4</th><th scope="col">5</th></tr></thead>
+      <tbody><tr><th scope="row">Survival \(Q_i\)</th><td>0.9802</td><td>0.9608</td><td>0.9418</td><td>0.9231</td><td>0.9048</td></tr>
+      <tr><th scope="row">Default in year</th><td>0.0198</td><td>0.0194</td><td>0.0190</td><td>0.0186</td><td>0.0183</td></tr></tbody></table></div></div></div>
+    <div class="tb-worked-step"><div class="tb-worked-step-num">2</div><div class="tb-worked-step-text"><b>Premium leg.</b> \(\sum Q_iP(i)=0.9802e^{-0.05}+\dots+0.9048e^{-0.25}=4.0728\). The accrued payments add \(\sum(Q_{i-1}-Q_i)\tfrac12P(i-\tfrac12)=0.0422\). The risky annuity is \(A=4.1150\).</div></div>
+    <div class="tb-worked-step"><div class="tb-worked-step-num">3</div><div class="tb-worked-step-text"><b>Protection leg.</b> \(0.6\sum(Q_{i-1}-Q_i)P(i-\tfrac12)=0.6\times0.08436=0.05062\).</div></div>
+    <div class="tb-worked-step"><div class="tb-worked-step-num">4</div><div class="tb-worked-step-text"><b>Spread.</b> \(s=0.05062/4.1150=0.0123\), or 123 basis points. The approximation \(\lambda(1-R)=0.02\times0.6\) gives 120 basis points; the difference arises from annual payments and the assumption that defaults occur in mid-year.</div></div>
+  </div>
+
+  <h3 class="tb-subsection">Marking a swap to market</h3>
+  <p>Once a swap has been agreed, its spread is fixed, and the spread quoted in the market for new swaps on the same entity changes as the credit of the entity changes. The value of the swap changes accordingly. A buyer of protection at spread \(s_0\) can offset the swap by selling protection at the current spread \(s\) for the remaining life. The protection legs then cancel, and the buyer receives \(s-s_0\) per year for as long as the entity survives.</p>
+  <div class="tb-result">
+    <div class="tb-result-label">Result 17.4 &mdash; The value of an existing CDS</div>
+    <p>The value to the buyer of protection of a swap with spread \(s_0\) and notional principal \(L\) is \[ (s-s_0)\,A\,L, \] where \(s\) is the current spread for the remaining life and \(A\) is the risky annuity for that life. The value to the seller is the negative of this.</p>
+  </div>
+  <p>Suppose that the pension fund of Worked example 17.2 had bought protection at 100 basis points, and that the market spread is now 123 basis points with a risky annuity of 4.115. The swap is worth \((0.0123-0.0100)\times4.115\times10{,}000{,}000\), about $95,000, to the fund. Since 2009 standard swaps in North America have paid a fixed spread of 100 or 500 basis points, and the difference between the fixed and the market spread is settled at the start by an <strong>upfront payment</strong> of this amount.</p>
+
+  <div class="tb-decision tb-lab">
+    <div class="tb-decision-label">&#9881; Interactive figure 17.1 &mdash; Survival, default, and the CDS spread</div>
+    <h4>From the hazard rate to the price of protection</h4>
+    <p class="tb-decision-intro">The figure shows the probability that the reference entity survives, and the probability that it has defaulted, over ten years for a constant hazard rate. Vary the hazard rate and the recovery rate. The readout gives the spread of a five-year swap with annual payments, computed by Result 17.3 with a risk-free rate of 5 percent, and the value of an existing swap bought at 100 basis points.</p>
+    <div class="tb-controls tb-controls-grid">
+      <div><label for="cs-l">Hazard rate: <span id="cs-l-v">2.0%</span></label><input type="range" id="cs-l" min="0.2" max="10" step="0.1" value="2" oninput="updateCS()"></div>
+      <div><label for="cs-r">Recovery rate: <span id="cs-r-v">40%</span></label><input type="range" id="cs-r" min="0" max="80" step="5" value="40" oninput="updateCS()"></div>
+    </div>
+    <div class="tb-chart-box"><canvas id="cs-canvas" height="260" role="img" aria-label="Figure: probability of survival declining exponentially from one, and cumulative probability of default rising from zero, over ten years for the selected hazard rate; the five-year values and the CDS spread are stated in the readout"></canvas></div>
+    <div class="tb-readout" id="cs-readout" aria-live="polite"></div>
+  </div>
+
+  <p>The figure shows two properties of the spread. It is nearly proportional to the hazard rate. And it falls as the recovery rate rises, since the protection seller then pays less when default occurs: with a recovery rate of 80 percent, a hazard rate of 2 percent supports a spread of only about 41 basis points. A spread alone does not identify the probability of default; the recovery rate must be assumed. Practitioners usually assume 40 percent.</p>
+
+  <div class="tb-check" data-check="cc17-2">
+    <div class="tb-check-label">Concept check 17.2</div>
+    <p class="tb-check-q">The five-year CDS spread of a company rises from 150 to 300 basis points, and the recovery rate is assumed to remain 40 percent. Which statement is correct?</p>
+    <button class="tb-check-opt" data-explain="A spread of 300 basis points is the expected loss per year, 3 percent of the notional principal. The probability of default is the expected loss divided by the loss rate, 0.03/0.6.">The risk-neutral probability of default per year has risen to 3 percent.</button>
+    <button class="tb-check-opt" data-correct="1" data-explain="Correct. By the credit triangle the hazard rate has risen from 0.015/0.6 = 2.5 percent to 0.03/0.6 = 5 percent. A buyer of protection at the old spread has gained (0.03 − 0.015) × A per dollar of notional principal.">The risk-neutral hazard rate has risen from 2.5 percent to 5 percent, and a buyer of protection at the old spread has gained.</button>
+    <button class="tb-check-opt" data-explain="The seller of protection at 150 basis points receives less than the current price of the protection that it provides, and has lost.">A seller of protection at the old spread has gained, since the payments it receives are fixed.</button>
+    <div class="tb-check-fb" aria-live="polite"></div>
+  </div>
+
+  <h2 class="tb-section">17.5 &nbsp;Credit indices, total return swaps, and collateralized debt obligations</h2>
+  <p>A <strong>credit index</strong> tracks the CDS spreads of a portfolio of companies. The two principal families are CDX, which covers North America, and iTraxx, which covers Europe and Asia. The CDX North American Investment Grade index, for example, comprises 125 companies with investment-grade ratings, and its composition is revised every six months. A swap on the index provides protection on all 125 companies at once. If the notional principal is $125 million, each company is covered for $1 million; when one defaults, the seller pays the loss on $1 million, and the notional principal and the payments are reduced by one 125th. The quoted index is approximately the average of the CDS spreads of the companies in it.</p>
+  <p>A <strong>total return swap</strong> exchanges the total return on an asset, which is its income and the change in its value, for a floating rate of interest plus a spread. The payer of the total return on a corporate bond receives LIBOR or its successor rate plus a spread, and pays the coupons on the bond and any increase in its price; the receiver pays the floating rate and any decrease in the price. The receiver obtains the economic exposure of owning the bond without buying it. In effect, the payer has lent to the receiver the cost of the bond and holds the bond as collateral. Total return swaps on shares permit an investor to take large positions without owning the shares, a point taken up in Chapter 18.</p>
+  <p>A <strong>collateralized debt obligation</strong> (CDO) redistributes the credit risk of a portfolio of debt among investors in several classes, or <strong>tranches</strong>. In a simple structure the <strong>equity tranche</strong> bears the first 5 percent of losses on the portfolio; the <strong>mezzanine tranche</strong> bears losses between 5 and 20 percent; and the <strong>senior tranche</strong> bears losses above 20 percent. Each tranche receives a rate of interest that compensates for its risk: the equity tranche a high rate and the senior tranche a low one. In a <strong>synthetic CDO</strong> the portfolio is a set of credit default swaps rather than bonds.</p>
+  <p>The risk of a tranche depends critically on the <strong>default correlation</strong> among the companies in the portfolio, which is the tendency of defaults to occur together. When correlation is low, defaults are spread over time and large losses on the whole portfolio are very improbable, so that the senior tranche is nearly free of risk. When correlation is high, defaults come together, and large losses become more likely: the senior tranche becomes riskier, and the equity tranche, paradoxically, safer, since there is a greater chance that few defaults occur at all. The standard model of the market, the one-factor Gaussian copula, summarizes the correlation in a single parameter. Underestimates of default correlation in tranches backed by mortgages were central to the losses of 2007 and 2008, when many senior tranches with the highest rating lost most of their value.</p>
+
+  <div class="tb-insight">
+    <div class="tb-insight-label">Historical note</div>
+    <p>American International Group, through its Financial Products subsidiary, sold protection on several hundred billion dollars of senior tranches backed by mortgages, in the belief that they would never suffer losses. Its contracts required it to post collateral if their value moved against it or if its own credit rating was lowered. Both occurred in September 2008, and the company could not meet the demands for collateral. The United States government provided support that eventually exceeded $180 billion. The same month, the bankruptcy of Lehman Brothers became the largest credit event in the market: the auction to settle swaps on Lehman set a recovery rate of 8.625 percent, so that sellers of protection paid more than 91 cents on each dollar of notional principal.</p>
+  </div>
+
+  <h2 class="tb-section">17.6 &nbsp;Counterparty credit risk</h2>
+  <p>A derivative traded over the counter exposes each party to the risk that the other will default. The exposure is unlike that of a loan. The amount at risk is not fixed: a party loses on the default of its counterparty only if the derivative then has a positive value to it, and the value varies over time. If the value is negative, the defaulting counterparty's administrators require that the amount owed be paid in full, and the surviving party gains nothing. The <strong>exposure</strong> at time \(t\) is therefore \(\max(V_t,0)\), where \(V_t\) is the value of the derivative to the party. The <strong>expected exposure</strong> \(EE(t)\) is the mean of the exposure in a risk-neutral world.</p>
+  <div class="tb-result">
+    <div class="tb-result-label">Result 17.5 &mdash; The credit value adjustment</div>
+    <p>Divide the life of a derivative into intervals, and let \(q_i\) be the risk-neutral probability that the counterparty defaults in the \(i\)th interval, \(t_i\) its midpoint, and \(R\) the recovery rate of the counterparty. The <strong>credit value adjustment</strong> is \[ \text{CVA}=(1-R)\sum_i q_i\,EE(t_i)\,P(t_i), \] and the value of the derivative allowing for the default of the counterparty is the value without default less the CVA.</p>
+  </div>
+  <p>The expected exposure depends on the type of derivative. For an option that a party has bought, the value is never negative, and the exposure is the value of the option itself. Since the expected present value of the option's future value is its value today, \(f_0\), the CVA reduces to \((1-R)f_0\) multiplied by the probability that the counterparty defaults during the life of the option. For an option that a party has sold, the exposure is zero. For a forward contract the exposure grows with time, since the distribution of the value of the contract widens as the delivery date approaches. For an interest rate swap it rises and then falls: the uncertainty about rates increases with time, but the number of payments remaining declines, and the expected exposure is greatest about one third of the way through the life of the swap.</p>
+
+  <div class="tb-worked">
+    <div class="tb-worked-label">Worked example 17.4 &mdash; The CVA of a purchased option</div>
+    <div class="tb-worked-q">Northwind buys from a dealer a two-year option, settled at expiration, whose value without default is $5 million. The dealer's hazard rate is 2 percent and its recovery rate 40 percent. Find the CVA and the value of the option.</div>
+    <div class="tb-worked-step"><div class="tb-worked-step-num">1</div><div class="tb-worked-step-text"><b>Probability of default.</b> \(1-e^{-0.02\times2}=0.0392\).</div></div>
+    <div class="tb-worked-step"><div class="tb-worked-step-num">2</div><div class="tb-worked-step-text"><b>CVA.</b> \((1-0.4)\times5{,}000{,}000\times0.0392=\$117{,}600\).</div></div>
+    <div class="tb-worked-step"><div class="tb-worked-step-num">3</div><div class="tb-worked-step-text"><b>Value.</b> \(5{,}000{,}000-117{,}600=\$4{,}882{,}400\). Northwind should pay no more than this for the option from this dealer; an option from a dealer of better credit is worth more.</div></div>
+  </div>
+
+  <p>The default of the party itself is the mirror image. A derivative with a negative value to a party is a liability, and the party's own default would relieve it of part of the liability. The <strong>debit value adjustment</strong> (DVA) is computed as the CVA is, with the party's own probability of default and the expected value of \(\max(-V_t,0)\). The value of the derivative allowing for the default of both parties is the value without default less the CVA plus the DVA. Accounting standards require banks to report DVA, with the uncomfortable consequence that a bank whose credit deteriorates reports a gain.</p>
+
+  <h3 class="tb-subsection">Netting and collateral</h3>
+  <p>Two arrangements greatly reduce counterparty risk. Under <strong>netting</strong>, all the derivatives between two parties are treated as a single contract if one of them defaults: the surviving party's exposure is \(\max(\sum V_j,0)\), the positive part of the total value, rather than \(\sum\max(V_j,0)\). A party that has contracts with a counterparty worth $10 million and &minus;$8 million has an exposure of $10 million without netting and $2 million with it. Under a <strong>collateral agreement</strong>, a party to whom the portfolio has a negative value must post cash or securities to the other, adjusted each day as the value changes. The exposure is then limited to the change in value over the few days that would elapse between the counterparty's last posting of collateral and the closing out of its positions. Contracts cleared through a central counterparty, as most standard swaps now must be, are subject to daily margin like futures, and their counterparty risk is that of the clearing house.</p>
+
+  <div class="tb-decision tb-lab">
+    <div class="tb-decision-label">&#9881; Interactive figure 17.2 &mdash; Expected exposure and the CVA</div>
+    <h4>A five-year forward and a five-year swap with the same counterparty</h4>
+    <p class="tb-decision-intro">The figure shows the expected exposure of a dealer to a counterparty, with no collateral, over the life of a five-year contract with a notional principal of $100 million: a forward contract on an asset with a volatility of 20 percent, or an interest rate swap on a rate whose volatility is one percentage point per year. Vary the counterparty's hazard rate and recovery rate. The readout gives the CVA computed by Result 17.5 with quarterly intervals and a risk-free rate of 5 percent.</p>
+    <div class="tb-seg" role="group" aria-label="Contract">
+      <button class="btn-tb btn-tb-primary" id="ee-p0" onclick="eeProd(0)">Forward contract</button>
+      <button class="btn-tb btn-tb-ghost" id="ee-p1" onclick="eeProd(1)">Interest rate swap</button>
+    </div>
+    <div class="tb-controls tb-controls-grid">
+      <div><label for="ee-l">Counterparty hazard rate: <span id="ee-l-v">2.0%</span></label><input type="range" id="ee-l" min="0.2" max="10" step="0.1" value="2" oninput="updateEE()"></div>
+      <div><label for="ee-r">Counterparty recovery rate: <span id="ee-r-v">40%</span></label><input type="range" id="ee-r" min="0" max="80" step="5" value="40" oninput="updateEE()"></div>
+    </div>
+    <div class="tb-chart-box"><canvas id="ee-canvas" height="260" role="img" aria-label="Figure: expected exposure of a dealer over five years; for a forward contract it rises with the square root of time to about 17.8 million dollars at maturity; for an interest rate swap it rises to a peak of about 1.7 million dollars one third of the way through the life and falls to zero at maturity"></canvas></div>
+    <div class="tb-readout" id="ee-readout" aria-live="polite"></div>
+  </div>
+
+  <p>With a hazard rate of 2 percent and a recovery rate of 40 percent, the CVA of the forward contract is about $582,000 and that of the swap about $62,000. The swap carries much less counterparty risk for the same notional principal, because only the differences between interest payments are exchanged, and the principal is never paid. The CVA rises nearly in proportion to the hazard rate and to \(1-R\), as the credit triangle would suggest.</p>
+
+  <div class="tb-decision tb-lab">
+    <div class="tb-decision-label">&#9881; Interactive figure 17.3 &mdash; Three-dimensional view</div>
+    <h4>Survival probability over the hazard rate and time</h4>
+    <p class="tb-decision-intro">The surface is the probability that a company survives to a given time, for hazard rates from zero to 10 percent per year and times up to ten years. Select the probability of survival, or the unconditional probability of default in each year. The gold curve is the selected time, and the marker the selected hazard rate. Drag to rotate; scroll or pinch to zoom.</p>
+    <div class="tb-seg" role="group" aria-label="Quantity">
+      <button class="btn-tb btn-tb-primary" id="hz-g0" onclick="hzPick(0)">Probability of survival</button>
+      <button class="btn-tb btn-tb-ghost" id="hz-g1" onclick="hzPick(1)">Probability of default in the year</button>
+    </div>
+    <div class="tb-3d" id="hz3d" role="img" aria-label="Three-dimensional surface: probability of survival equal to the exponential of minus the hazard rate times time, for hazard rates from zero to ten percent and times from zero to ten years; it falls from one at the front left corner to about 0.37 at the back right; the alternative view shows the probability of default in each year. Values are in the table equivalent."></div>
+    <div class="tb-controls tb-controls-grid">
+      <div><label for="hz-t">Time shown by the gold curve: <span id="hz-t-v">5.0 years</span></label><input type="range" id="hz-t" min="0.5" max="10" step="0.5" value="5" oninput="updateHZ()"></div>
+      <div><label for="hz-l">Hazard rate marked: <span id="hz-l-v">2.5%</span></label><input type="range" id="hz-l" min="0" max="10" step="0.5" value="2.5" oninput="updateHZ()"></div>
+    </div>
+    <div class="tb-readout" id="hz-readout" aria-live="polite"></div>
+    <details class="tb-3d-alt"><summary>Table equivalent of this figure</summary><div id="hz-table"></div></details>
+  </div>
+
+  <div class="tb-check" data-check="cc17-3">
+    <div class="tb-check-label">Concept check 17.3</div>
+    <p class="tb-check-q">A bank has three uncollateralized derivatives with a counterparty, worth +$7 million, &minus;$4 million, and +$2 million to the bank. What is the bank's exposure under a netting agreement?</p>
+    <button class="tb-check-opt" data-explain="$9 million is the exposure without netting: the sum of the positive values only.">$9 million.</button>
+    <button class="tb-check-opt" data-correct="1" data-explain="Correct. Under netting the three contracts are treated as one, worth 7 − 4 + 2 = $5 million, and the exposure is max(5, 0) = $5 million.">$5 million.</button>
+    <button class="tb-check-opt" data-explain="$13 million is the sum of the absolute values. A contract with a negative value to the bank is a liability, which under netting reduces the exposure rather than adding to it.">$13 million.</button>
+    <div class="tb-check-fb" aria-live="polite"></div>
+  </div>
+
+  <h2 class="tb-section tb-starred-h">17.7 &nbsp;<span class="tb-star" title="Optional advanced section">&#9733;</span> Derivation of the credit triangle</h2>
+  <div class="tb-starred">
+    <p class="tb-starred-note"><strong>Optional section.</strong> This section obtains the exact relation \(s=\lambda(1-R)\) of Result 17.3 for a swap with continuous payments, and shows why the same relation describes the spread of a bond.</p>
+    <p>Let the hazard rate \(\lambda\) and the risk-free rate \(r\) be constant. The probability of survival to time \(t\) is \(e^{-\lambda t}\), and the probability density of default at time \(t\) is \(\lambda e^{-\lambda t}\). Per dollar of notional principal, the buyer pays at the rate \(s\) for as long as the entity survives. The expected present value of the premium leg is \[ \int_0^T s\,e^{-\lambda t}e^{-rt}\,dt=s\,\frac{1-e^{-(r+\lambda)T}}{r+\lambda}. \] No accrued payment arises, because the payments are continuous. The seller pays \(1-R\) at the time of default. The expected present value of the protection leg is \[ \int_0^T (1-R)\,\lambda e^{-\lambda t}e^{-rt}\,dt=(1-R)\lambda\,\frac{1-e^{-(r+\lambda)T}}{r+\lambda}. \]</p>
+    <p>The two integrals have the same factor, \([1-e^{-(r+\lambda)T}]/(r+\lambda)\), which is the risky annuity \(A\) in continuous form. Setting the two legs equal gives \(s=\lambda(1-R)\), whatever the maturity and whatever the risk-free rate. When the hazard rate varies with time, the factors differ, and the spread is a weighted average of \(\lambda(t)(1-R)\) over the life of the swap.</p>
+    <p>The same argument applies to a bond. Consider a floating-rate bond of the reference entity that pays the risk-free rate plus a spread \(s\), and suppose that on default the holder receives \(R\) per dollar of face value. A portfolio of the bond and a CDS on it is free of risk: the CDS restores the face value on default. The portfolio must therefore earn the risk-free rate, so that the spread on the bond equals the CDS spread, \(s=\lambda(1-R)\). This is Result 17.2. In practice the two spreads differ by the <strong>CDS&ndash;bond basis</strong>, which arises from the cost of funding a position in the bond, the cheapest-to-deliver option, and the counterparty risk of the CDS itself. The basis was usually small before 2008 and became large and negative in the crisis, when the funds needed to exploit it could not be borrowed.</p>
+  </div>
+
+  <h2 class="tb-section">Summary</h2>
+  <ul class="tb-list">
+    <li>With a constant hazard rate \(\lambda\), the probability of survival to time \(t\) is \(e^{-\lambda t}\). The probability of default in a year conditional on survival to its start is constant; the unconditional probability declines.</li>
+    <li>The credit spread of a bond is the expected loss per year in a risk-neutral world, so that the average hazard rate is approximately \(s/(1-R)\). Risk-neutral probabilities of default exceed real-world probabilities, because investors require a premium for bearing credit risk. The first are used for valuation and the second for forecasting losses.</li>
+    <li>A credit default swap provides protection against the default of a reference entity in return for periodic payments at the CDS spread. On a credit event the seller pays the notional principal multiplied by one minus the recovery rate, which is usually set by auction.</li>
+    <li>The CDS spread equates the expected present values of the premium leg and the protection leg; with a constant hazard rate it is \(\lambda(1-R)\). An existing swap is worth \((s-s_0)AL\) to the buyer of protection, where \(A\) is the risky annuity.</li>
+    <li>Credit indices provide protection on a portfolio of companies. A total return swap transfers the whole return on an asset. A CDO divides the credit risk of a portfolio among tranches, whose risk depends critically on default correlation.</li>
+    <li>The credit value adjustment of a derivative is \((1-R)\sum q_iEE(t_i)P(t_i)\). Expected exposure is the value of a purchased option, grows with time for a forward, and rises and falls for a swap. Netting and collateral reduce exposure greatly.</li>
+  </ul>
+
+  <h2 class="tb-section">Exercises</h2>
+  <div class="tb-exercises">
+    <div class="tb-ex"><div class="tb-ex-q"><span class="tb-ex-num">17.1</span> The hazard rate of a company is 3 percent per year. Find (a) the probability that it survives three years; (b) the unconditional probability that it defaults in the third year; (c) the probability that it defaults in the third year given that it has survived two years.</div>
+      <button class="tb-ex-toggle" aria-expanded="false">Show solution</button>
+      <div class="tb-ex-sol" hidden><p>(a) \(e^{-0.09}=0.9139\). (b) \(e^{-0.06}-e^{-0.09}=0.9418-0.9139=0.0278\). (c) \(0.0278/0.9418=0.0296=1-e^{-0.03}\).</p></div></div>
+    <div class="tb-ex"><div class="tb-ex-q"><span class="tb-ex-num">17.2</span> The spread of a company's five-year bonds over Treasury bonds is 240 basis points. Estimate the average hazard rate over five years if the recovery rate is (a) 40 percent; (b) 20 percent. Explain why the estimate is lower when the assumed recovery rate is lower.</div>
+      <button class="tb-ex-toggle" aria-expanded="false">Show solution</button>
+      <div class="tb-ex-sol" hidden><p>(a) \(0.024/0.6=4.0\) percent. (b) \(0.024/0.8=3.0\) percent. The estimate falls as the recovery rate falls: when more is lost on each default, fewer defaults are needed to produce the same expected loss.</p></div></div>
+    <div class="tb-ex"><div class="tb-ex-q"><span class="tb-ex-num">17.3</span> The risk-neutral hazard rate of a reference entity is 1.5 percent and the recovery rate 30 percent. Estimate the CDS spread. If the spread rises to 210 basis points while the recovery rate is unchanged, what hazard rate does the market now imply?</div>
+      <button class="tb-ex-toggle" aria-expanded="false">Show solution</button>
+      <div class="tb-ex-sol" hidden><p>\(s=0.015\times0.7=0.0105\), or 105 basis points. At 210 basis points, \(\lambda=0.021/0.7=3.0\) percent: the spread and the hazard rate have both doubled.</p></div></div>
+    <div class="tb-ex"><div class="tb-ex-q"><span class="tb-ex-num">17.4</span> A fund buys protection on a reference entity with a notional principal of $20 million at a spread of 90 basis points, paid quarterly. The entity defaults one month after a payment date, and the auction sets a recovery rate of 42 percent. Find the payment by the seller and the accrued payment by the buyer.</div>
+      <button class="tb-ex-toggle" aria-expanded="false">Show solution</button>
+      <div class="tb-ex-sol" hidden><p>The seller pays \((1-0.42)\times20{,}000{,}000=\$11{,}600{,}000\). The buyer pays \(0.009\times20{,}000{,}000\times\tfrac1{12}=\$15{,}000\) for the month of protection since the last payment.</p></div></div>
+    <div class="tb-ex"><div class="tb-ex-q"><span class="tb-ex-num">17.5</span> A bank bought five-year protection with a notional principal of $10 million at 80 basis points. The spread for the remaining life is now 130 basis points and the risky annuity is 4.2. Find the value of the swap to the bank. Has the credit of the reference entity improved or deteriorated?</div>
+      <button class="tb-ex-toggle" aria-expanded="false">Show solution</button>
+      <div class="tb-ex-sol" hidden><p>\((0.0130-0.0080)\times4.2\times10{,}000{,}000=\$210{,}000\). The swap is an asset to the buyer of protection. The credit has deteriorated: protection now costs more than the bank pays for it.</p></div></div>
+    <div class="tb-ex"><div class="tb-ex-q"><span class="tb-ex-num">17.6</span> A dealer has four uncollateralized derivatives with a counterparty, worth +$12 million, &minus;$5 million, +$3 million, and &minus;$9 million to the dealer. Find the dealer's exposure (a) without netting; (b) with netting.</div>
+      <button class="tb-ex-toggle" aria-expanded="false">Show solution</button>
+      <div class="tb-ex-sol" hidden><p>(a) The sum of the positive values, \(12+3=\$15\) million. (b) \(\max(12-5+3-9,0)=\$1\) million. Netting has reduced the exposure by more than 90 percent.</p></div></div>
+    <div class="tb-ex"><div class="tb-ex-q"><span class="tb-ex-num">17.7</span> A company buys a three-year option from a dealer. Its value without default is $2 million. The dealer's hazard rate is 1 percent and its recovery rate 30 percent. Find the CVA. What is the CVA of the dealer's position in the same option?</div>
+      <button class="tb-ex-toggle" aria-expanded="false">Show solution</button>
+      <div class="tb-ex-sol" hidden><p>The probability that the dealer defaults within three years is \(1-e^{-0.03}=0.02955\). The CVA is \(0.7\times2{,}000{,}000\times0.02955=\$41{,}400\). The dealer has sold the option, whose value to it is never positive, so that its exposure to the company, and its CVA, are zero. The company's possible default affects the dealer only through its DVA, which is likewise zero, as the company owes nothing.</p></div></div>
+    <div class="tb-ex"><div class="tb-ex-q"><span class="tb-ex-num">17.8</span> The historical rate of default of companies rated A is about 0.1 percent per year, while their bond spreads imply a hazard rate of about 1 percent. Give three reasons for the difference, and state which estimate a bank should use (a) to price protection that it sells; (b) to estimate the losses on its loan portfolio in a stress test.</div>
+      <button class="tb-ex-toggle" aria-expanded="false">Show solution</button>
+      <div class="tb-ex-sol" hidden><p>Investors require compensation beyond the expected loss because defaults are correlated with one another and with recessions, so that the risk cannot be diversified; corporate bonds are less liquid than Treasury bonds; and the risk-free benchmark used by traders is below the Treasury rate, which raises measured spreads. (a) The risk-neutral estimate, since pricing follows risk-neutral valuation. (b) The real-world estimate, adjusted for the stress scenario, since the purpose is to forecast actual losses.</p></div></div>
+  </div>
+
+  <h2 class="tb-section">Further reading</h2>
+  <ul class="tb-list tb-refs">
+    <li>Duffie, D., and Singleton, K. J. (2003). <em>Credit Risk: Pricing, Measurement, and Management.</em> Princeton University Press.</li>
+    <li>Gregory, J. (2020). <em>The xVA Challenge: Counterparty Risk, Funding, Collateral, Capital and Initial Margin</em> (4th ed.). Wiley.</li>
+    <li>Hull, J. C. (2022). <em>Options, Futures, and Other Derivatives</em> (11th ed.). Pearson. Chapters 24&ndash;25.</li>
+    <li>Hull, J., Predescu, M., and White, A. (2005). Bond prices, default probabilities, and risk premiums. <em>Journal of Credit Risk</em>, 1(2), 53&ndash;60.</li>
+    <li>Li, D. X. (2000). On default correlation: A copula function approach. <em>Journal of Fixed Income</em>, 9(4), 43&ndash;54.</li>
+    <li>Merton, R. C. (1974). On the pricing of corporate debt: The risk structure of interest rates. <em>Journal of Finance</em>, 29(2), 449&ndash;470.</li>
+  </ul>
+
+  <div class="tb-quiz" id="quiz-ch17">
+    <div class="tb-quiz-header">
+      <h3>Chapter 17 Check &mdash; Credit Derivatives and Counterparty Risk</h3>
+      <span>8 questions &middot; pass at 70%</span>
+    </div>
+    <div class="tb-quiz-body" id="quiz-ch17-body"></div>
+    <div class="tb-quiz-footer">
+      <button class="btn-tb btn-tb-primary" onclick="gradeQuiz('ch17')">Submit answers</button>
+      <button class="btn-tb btn-tb-ghost" onclick="buildQuiz('ch17')">New questions</button>
+      <span class="tb-quiz-score" id="quiz-ch17-score" aria-live="polite"></span>
+    </div>
+  </div>
+
+  <div class="tb-chapter-nav">
+    <button class="tb-chapter-nav-btn" onclick="showChapter('ch16')">&larr; Chapter 16</button>
+    <button class="tb-mark-complete" id="mc-ch17" onclick="markComplete('ch17')">Mark chapter complete</button>
+    <button class="tb-chapter-nav-btn" onclick="showChapter('ch18')">Chapter 18 &rarr;</button>
+  </div>
+</div>
+
+<!-- ═══ CHAPTER 18 ═══ -->
+<div id="page-ch18" style="display:none;">
+  <div class="tb-chapter-eyebrow">Chapter 18 &middot; Part VI: Extensions</div>
+  <h1 class="tb-chapter-title">Exotic Options, Structured Products, and Lessons from Derivatives Losses</h1>
+  <p class="tb-chapter-subtitle">Options whose payoffs depart from those of ordinary calls and puts, the products that banks build from them for investors, and what the largest losses in the history of derivatives teach about their use</p>
+  <hr class="tb-chapter-divider">
+
+  <div class="tb-objectives">
+    <div class="tb-objectives-label">Learning objectives</div>
+    <p>After completing this chapter, the reader should be able to:</p>
+    <ol>
+      <li>describe the principal types of exotic option and the reasons they are used;</li>
+      <li>value a chooser option, and value a barrier option by the formulas and by the parity between knock-in and knock-out options;</li>
+      <li>value binary options and decompose an ordinary option into binary options;</li>
+      <li>explain why Asian options are cheaper, and lookback options dearer, than ordinary options;</li>
+      <li>decompose a structured product into a bond and options, and compute the participation rate of a principal-protected note;</li>
+      <li>state the lessons that the principal derivatives losses hold for financial and nonfinancial companies;</li>
+      <li><span class="tb-star">&#9733;</span> derive the prices of binary options and of the chooser option.</li>
+    </ol>
+  </div>
+
+  <div class="tb-decision">
+    <div class="tb-decision-label">&#9881; Decision &mdash; choose first; the theory follows</div>
+    <h4>The price of the missing half</h4>
+    <p class="tb-decision-intro">An ordinary six-month call on Northwind shares with a strike of $30 costs $2.55. A dealer quotes $1.92 for a call with the same terms that ceases to exist if the share price ever falls to $25. What should a call with the same terms that comes into existence only if the share price falls to $25 cost?</p>
+    <div class="tb-seg" role="group" aria-label="Price of the knock-in call">
+      <button class="btn-tb btn-tb-ghost" id="bi-0" onclick="biPick(0)">$0.63</button>
+      <button class="btn-tb btn-tb-ghost" id="bi-1" onclick="biPick(1)">$1.92</button>
+      <button class="btn-tb btn-tb-ghost" id="bi-2" onclick="biPick(2)">$4.47</button>
+    </div>
+    <div class="tb-readout" id="bi-readout" aria-live="polite">Select a price.</div>
+  </div>
+
+  <h2 class="tb-section">18.1 &nbsp;Exotic options</h2>
+  <p>The calls and puts of the preceding chapters, European or American, are called <strong>plain vanilla</strong> options. Their properties are standard, and they trade on exchanges or are quoted by dealers in large volume. Derivatives whose payoffs are more complex are called <strong>exotic options</strong>, or exotics. Most are traded over the counter, and many are created by banks to meet the needs of a particular client. They are used for three reasons. A client's exposure may be better matched by an exotic than by a vanilla option: a company that buys raw materials every week is exposed to the average price, not the price on one date. An exotic may cost less than the vanilla option that would serve nearly as well. And an exotic may express a view, about the path of a price or about volatility, that vanilla options cannot express cheaply.</p>
+  <p>Several types are simple variations on vanilla options.</p>
+  <ul class="tb-list">
+    <li>A <strong>package</strong> is a portfolio of vanilla options, forwards, cash, and the underlying asset, such as the spreads and combinations of Chapter 9. A package is often arranged to cost nothing at the start, as a range forward does.</li>
+    <li>A <strong>Bermudan option</strong> may be exercised early, but only on specified dates. Its value lies between those of the corresponding European and American options.</li>
+    <li>A <strong>forward start option</strong> begins at a future date, with a strike set at that date equal to the price of the asset then. Options granted to employees are often of this kind. For an asset that pays no dividend, a forward start option at the money has the same value as an option at the money today with the same life.</li>
+    <li>A <strong>compound option</strong> is an option on an option: a call on a call, for example, gives the right to buy a call at a stated price on a stated date. It is a cheap way to secure the right to protection that may not be needed.</li>
+    <li>A <strong>chooser option</strong> gives its holder the right to decide, at a stated date \(t_1\), whether the option is a call or a put. It suits an investor who expects a large movement in the price, perhaps on the announcement of the result of a lawsuit, but does not know its direction.</li>
+  </ul>
+  <div class="tb-result">
+    <div class="tb-result-label">Result 18.1 &mdash; The value of a chooser option</div>
+    <p>If the call and the put that the holder may choose are European, with strike \(K\) and expiration \(T\), and the choice is made at time \(t_1\), the chooser option on an asset that pays no income is a package of a call with strike \(K\) and expiration \(T\) and a put with strike \(Ke^{-r(T-t_1)}\) and expiration \(t_1\): \[ \text{chooser}=c(K,T)+p\!\left(Ke^{-r(T-t_1)},t_1\right). \]</p>
+  </div>
+
+  <div class="tb-worked">
+    <div class="tb-worked-label">Worked example 18.1 &mdash; A chooser option</div>
+    <div class="tb-worked-q">An investor expects a court ruling that will move Northwind's share price sharply in three months. Value a chooser option with a strike of $30, expiring in six months, with the choice made in three months. The share price is $28, the volatility 39 percent, and the risk-free rate 5 percent.</div>
+    <div class="tb-worked-step"><div class="tb-worked-step-num">1</div><div class="tb-worked-step-text"><b>The call.</b> The six-month call with a strike of $30 is worth $2.55 by the Black&ndash;Scholes&ndash;Merton formula.</div></div>
+    <div class="tb-worked-step"><div class="tb-worked-step-num">2</div><div class="tb-worked-step-text"><b>The put.</b> Its strike is \(30e^{-0.05\times0.25}=\$29.63\) and its life three months. Its value is $2.91.</div></div>
+    <div class="tb-worked-step"><div class="tb-worked-step-num">3</div><div class="tb-worked-step-text"><b>The chooser.</b> \(2.55+2.91=\$5.46\). A straddle, which holds both the call and the put for six months, costs \(2.55+3.81=\$6.36\). The chooser is cheaper because its holder must give up one of the two options after three months.</div></div>
+  </div>
+
+  <h2 class="tb-section">18.2 &nbsp;Barrier options</h2>
+  <p>A <strong>barrier option</strong> is an option whose existence depends on whether the price of the underlying asset reaches a specified level, the <strong>barrier</strong> \(H\), during a specified period. A <strong>knock-out option</strong> ceases to exist when the price reaches the barrier. A <strong>knock-in option</strong> comes into existence only when the price reaches the barrier. Each may be a call or a put, and the barrier may lie below the current price, a down option, or above it, an up option. There are therefore eight standard types: a down-and-out call, which ceases to exist if the price falls to the barrier, a down-and-in call, an up-and-out call, and so on. Some barrier options pay a <strong>rebate</strong>, a fixed amount paid when an option is knocked out.</p>
+  <p>Barrier options are popular because they are cheaper than vanilla options. A buyer of a down-and-out call who is confident that the price will not fall to the barrier obtains, in that event, the payoff of a vanilla call at a lower price. Since one of a knock-out option and the corresponding knock-in option exists at expiration, and the other does not, the two together give the payoff of the vanilla option in every case.</p>
+  <div class="tb-result">
+    <div class="tb-result-label">Result 18.2 &mdash; Parity between knock-in and knock-out options</div>
+    <p>With the same strike, barrier, and expiration, and no rebate, \[ \text{knock-in option}+\text{knock-out option}=\text{vanilla option}. \]</p>
+  </div>
+  <p>This answers the opening question. The down-and-in call is worth \(2.55-1.92=\$0.63\). The figure $4.47 adds the two prices instead of taking their difference, and $1.92 assumes that the knock-in and knock-out options are worth the same. They are not, because a fall from $28 to $25 within six months is not very likely: the knock-out option usually survives, and the knock-in option usually never begins.</p>
+  <p>European barrier options in the model of Chapter 11 have formulas. The formula for the down-and-in call with \(H\le K\) shows their character.</p>
+  <div class="tb-result">
+    <div class="tb-result-label">Result 18.3 &mdash; The down-and-in call</div>
+    <p>For a barrier \(H\) at or below the strike \(K\), continuously monitored, on an asset with income at rate \(q\), \[ c_{\text{di}}=S_0e^{-qT}\left(\frac{H}{S_0}\right)^{2\lambda}N(y)-Ke^{-rT}\left(\frac{H}{S_0}\right)^{2\lambda-2}N\!\left(y-\sigma\sqrt T\right), \] where \[ \lambda=\frac{r-q+\sigma^{2}/2}{\sigma^{2}},\qquad y=\frac{\ln\!\left[H^{2}/(S_0K)\right]}{\sigma\sqrt T}+\lambda\sigma\sqrt T . \] The down-and-out call is \(c-c_{\text{di}}\). Formulas for the other types are of the same form.</p>
+  </div>
+
+  <div class="tb-worked">
+    <div class="tb-worked-label">Worked example 18.2 &mdash; A down-and-out call</div>
+    <div class="tb-worked-q">Value a six-month down-and-out call on Northwind shares with a strike of $30 and a barrier of $25, using the data of Worked example 18.1.</div>
+    <div class="tb-worked-step"><div class="tb-worked-step-num">1</div><div class="tb-worked-step-text"><b>Parameters.</b> \(\lambda=(0.05+0.07605)/0.1521=0.8287\); \(\sigma\sqrt T=0.2758\); \(y=\ln[625/840]/0.2758+0.8287\times0.2758=-1.0721+0.2285=-0.8435\).</div></div>
+    <div class="tb-worked-step"><div class="tb-worked-step-num">2</div><div class="tb-worked-step-text"><b>Down-and-in call.</b> \((25/28)^{1.6575}=0.8287\) and \((25/28)^{-0.3425}=1.0396\). \(c_{\text{di}}=28\times0.8287\times N(-0.8435)-30e^{-0.025}\times1.0396\times N(-1.1193)=28\times0.8287\times0.1995-29.259\times1.0396\times0.1315=4.629-4.000=\$0.63\).</div></div>
+    <div class="tb-worked-step"><div class="tb-worked-step-num">3</div><div class="tb-worked-step-text"><b>Down-and-out call.</b> \(2.55-0.63=\$1.92\), about three quarters of the price of the vanilla call.</div></div>
+  </div>
+
+  <div class="tb-decision tb-lab">
+    <div class="tb-decision-label">&#9881; Interactive figure 18.1 &mdash; The value of a barrier call against the barrier</div>
+    <h4>How much is saved by accepting a barrier</h4>
+    <p class="tb-decision-intro">The figure shows the value of a six-month call on Northwind shares with a strike of $30, as a function of the barrier, for knock-out and knock-in options, with the vanilla call as a horizontal line. Select a down or an up barrier, and vary the volatility. At every barrier the two curves sum to the vanilla line.</p>
+    <div class="tb-seg" role="group" aria-label="Direction of barrier">
+      <button class="btn-tb btn-tb-primary" id="bv-d0" onclick="bvDir(0)">Down barrier (below $28)</button>
+      <button class="btn-tb btn-tb-ghost" id="bv-d1" onclick="bvDir(1)">Up barrier (above $30)</button>
+    </div>
+    <div class="tb-controls tb-controls-grid">
+      <div><label for="bv-v">Volatility: <span id="bv-v-v">39%</span></label><input type="range" id="bv-v" min="15" max="70" step="1" value="39" oninput="updateBV()"></div>
+      <div><label for="bv-h">Barrier marked: <span id="bv-h-v">$25</span></label><input type="range" id="bv-h" min="18" max="27.5" step="0.5" value="25" oninput="updateBV()"></div>
+    </div>
+    <div class="tb-chart-box"><canvas id="bv-canvas" height="260" role="img" aria-label="Figure: values of a knock-out call and a knock-in call with a strike of 30 against the level of the barrier, with the vanilla call as a horizontal line; the knock-out value approaches the vanilla value as the barrier moves away from the current price, and the knock-in value approaches zero; values at the marked barrier are in the readout"></canvas></div>
+    <div class="tb-readout" id="bv-readout" aria-live="polite"></div>
+  </div>
+
+  <p>An up-and-out call is worth much less than a down-and-out call with a barrier equally far from the current price, because it is knocked out in precisely the states in which the call pays most. With a barrier of $40 the up-and-out call is worth only $0.66, about a quarter of the vanilla price. Its value as a function of the share price and the time to expiration, shown in Interactive figure 18.2, has a form unlike that of any vanilla option: it rises with the share price at first, reaches a maximum, and falls to zero at the barrier.</p>
+
+  <div class="tb-decision tb-lab">
+    <div class="tb-decision-label">&#9881; Interactive figure 18.2 &mdash; Three-dimensional view</div>
+    <h4>The value surface of an up-and-out call</h4>
+    <p class="tb-decision-intro">The surface is the value of an up-and-out call on Northwind shares with a strike of $30 and a barrier of $40, for share prices from $15 to the barrier and times to expiration up to one year, with a volatility of 39 percent. Select the value or the delta. The gold curve is the selected time to expiration and the marker the selected share price. Drag to rotate; scroll or pinch to zoom.</p>
+    <div class="tb-seg" role="group" aria-label="Quantity">
+      <button class="btn-tb btn-tb-primary" id="b3-g0" onclick="b3Pick(0)">Value</button>
+      <button class="btn-tb btn-tb-ghost" id="b3-g1" onclick="b3Pick(1)">Delta</button>
+    </div>
+    <div class="tb-3d" id="b33d" role="img" aria-label="Three-dimensional surface: value of an up-and-out call with strike 30 and barrier 40 over share prices from 15 to 40 dollars and times to expiration from zero to one year. Near expiration it is the call payoff up to the barrier, where it drops to zero; far from expiration it is a low hump that peaks well below the barrier. The alternative view shows delta, which becomes large and negative near the barrier. Values are in the table equivalent."></div>
+    <div class="tb-controls tb-controls-grid">
+      <div><label for="b3-t">Time to expiration shown by the gold curve: <span id="b3-t-v">0.50 years</span></label><input type="range" id="b3-t" min="0.02" max="1" step="0.02" value="0.5" oninput="updateB3()"></div>
+      <div><label for="b3-s">Share price marked: <span id="b3-s-v">$34</span></label><input type="range" id="b3-s" min="15" max="40" step="0.5" value="34" oninput="updateB3()"></div>
+    </div>
+    <div class="tb-readout" id="b3-readout" aria-live="polite"></div>
+    <details class="tb-3d-alt"><summary>Table equivalent of this figure</summary><div id="b3-table"></div></details>
+  </div>
+
+  <p>The surface explains why barrier options are difficult to hedge. Near the barrier and close to expiration, the value falls from several dollars to zero over a small range of share prices. Delta is then large and negative, and gamma is very large; a dealer who has sold the option must trade heavily as the price approaches the barrier, and the trades themselves may push the price through it.</p>
+  <div class="tb-pitfall">
+    <div class="tb-pitfall-label">Common error</div>
+    <p>The formulas assume that the barrier is monitored continuously. Most contracts observe the price once a day or once a week, and an option observed less often is knocked out less often. Treating a discretely monitored option as continuous undervalues a knock-out option and overvalues a knock-in option. A correction due to Mark Broadie, Paul Glasserman, and Steven Kou moves the barrier away from the current price by the factor \(e^{0.5826\sigma\sqrt{\Delta t}}\), where \(\Delta t\) is the interval between observations, and applies the continuous formula. For the down-and-out call of Worked example 18.2 with weekly observation, the barrier falls from $25 to \(25e^{-0.5826\times0.39\times\sqrt{1/52}}=\$24.22\), and the value rises from $1.92 to $2.16.</p>
+  </div>
+
+  <h2 class="tb-section">18.3 &nbsp;Binary options</h2>
+  <p>A <strong>binary option</strong>, or digital option, has a discontinuous payoff. A <strong>cash-or-nothing call</strong> pays a fixed amount \(Q\) if the price of the asset at expiration is above the strike, and nothing otherwise. An <strong>asset-or-nothing call</strong> pays the price of the asset itself if it ends above the strike, and nothing otherwise. Puts are defined in the same way for prices below the strike. In a risk-neutral world the probability that the price ends above the strike is \(N(d_2)\), as Section 11.6 showed, which gives the value of the first. The value of the second follows from a change of measure, derived in Section 18.7.</p>
+  <div class="tb-result">
+    <div class="tb-result-label">Result 18.4 &mdash; Binary options</div>
+    <p>The value of a cash-or-nothing call paying \(Q\) is \(Qe^{-rT}N(d_2)\), and the value of an asset-or-nothing call is \(S_0e^{-qT}N(d_1)\), where \(d_1\) and \(d_2\) are those of the Black&ndash;Scholes&ndash;Merton formula. A vanilla call is a long asset-or-nothing call and a short position in \(K\) cash-or-nothing calls each paying $1: \[ c=S_0e^{-qT}N(d_1)-Ke^{-rT}N(d_2). \]</p>
+  </div>
+  <p>The decomposition gives the two terms of the formula of Chapter 11 a direct meaning. The first is the value of receiving the share when the call is exercised, and the second is the value of paying the strike when it is exercised.</p>
+
+  <div class="tb-worked">
+    <div class="tb-worked-label">Worked example 18.3 &mdash; Binary options on Northwind</div>
+    <div class="tb-worked-q">Value a six-month cash-or-nothing call paying $100 if the price of Northwind shares exceeds $30, and the corresponding asset-or-nothing call, using the data of Worked example 18.1.</div>
+    <div class="tb-worked-step"><div class="tb-worked-step-num">1</div><div class="tb-worked-step-text"><b>Parameters.</b> \(d_1=[\ln(28/30)+(0.05+0.07605)\times0.5]/0.2758=-0.0216\) and \(d_2=-0.2974\), so that \(N(d_1)=0.4914\) and \(N(d_2)=0.3831\).</div></div>
+    <div class="tb-worked-step"><div class="tb-worked-step-num">2</div><div class="tb-worked-step-text"><b>Values.</b> Cash-or-nothing: \(100e^{-0.025}\times0.3831=\$37.36\). Asset-or-nothing: \(28\times0.4914=\$13.76\).</div></div>
+    <div class="tb-worked-step"><div class="tb-worked-step-num">3</div><div class="tb-worked-step-text"><b>Check.</b> The vanilla call is \(13.76-30\times0.3736=13.76-11.21=\$2.55\), in agreement with Worked example 18.1.</div></div>
+  </div>
+
+  <div class="tb-check" data-check="cc18-1">
+    <div class="tb-check-label">Concept check 18.1</div>
+    <p class="tb-check-q">A cash-or-nothing call paying $1 is worth $0.40, and an asset-or-nothing call with the same strike of $50 and the same expiration is worth $23.00. What is the value of the vanilla call with the same terms?</p>
+    <button class="tb-check-opt" data-explain="The vanilla call pays the strike, $50, when it is exercised, so that it is short 50 cash-or-nothing calls of $1, not one.">$22.60.</button>
+    <button class="tb-check-opt" data-correct="1" data-explain="Correct. By Result 18.4 the call is the asset-or-nothing call less K cash-or-nothing calls: 23.00 − 50 × 0.40 = $3.00.">$3.00.</button>
+    <button class="tb-check-opt" data-explain="The cash-or-nothing calls are subtracted, not added: the holder of the vanilla call pays the strike on exercise.">$43.00.</button>
+    <div class="tb-check-fb" aria-live="polite"></div>
+  </div>
+
+  <h2 class="tb-section">18.4 &nbsp;Lookback and Asian options</h2>
+  <p>The payoffs of lookback and Asian options depend on the whole path of the price, and not only on its final value. A <strong>floating lookback call</strong> pays \(S_T-S_{\min}\), the amount by which the final price exceeds the lowest price during the life of the option: it buys at the lowest price. A <strong>floating lookback put</strong> pays \(S_{\max}-S_T\): it sells at the highest. A <strong>fixed lookback call</strong> pays \(\max(S_{\max}-K,0)\). Lookback options are always exercised, since the final price can be no lower than the minimum, and are therefore expensive. A six-month floating lookback call on Northwind shares is worth $5.93, against $3.39 for a vanilla call at the money.</p>
+  <p>An <strong>Asian option</strong> has a payoff that depends on the average price of the asset over the life of the option. An average price call pays \(\max(S_{\text{ave}}-K,0)\), and an average strike call pays \(\max(S_T-S_{\text{ave}},0)\). Asian options are cheaper than vanilla options, because the average of prices over a period varies less than the price at a single date. They are widely used in markets for commodities and currencies, where a company's exposure is to the average price of its purchases or sales over a period. They are also harder to manipulate, since a movement of the price on one day changes the average little. For a six-month average price call on Northwind shares with a strike of $30, based on 26 weekly prices, simulation of the kind described in Chapter 16 gives a value of about $1.18, less than half that of the vanilla call.</p>
+
+  <div class="tb-decision tb-lab">
+    <div class="tb-decision-label">&#9881; Interactive figure 18.3 &mdash; One path, four payoffs</div>
+    <h4>The payoffs of exotic options on a simulated path</h4>
+    <p class="tb-decision-intro">The figure shows a simulated path of the weekly price of Northwind shares over six months, starting at $28, with the strike of $30, the barrier of $25, the running minimum, and the running average. The readout gives the payoff on this path of a vanilla call, an average price call, a floating lookback call, and a down-and-out call, each with a strike of $30 where one applies. Draw new paths and compare the payoffs with the values of the options.</p>
+    <div class="tb-controls tb-controls-grid">
+      <div><label for="pp-v">Volatility: <span id="pp-v-v">39%</span></label><input type="range" id="pp-v" min="15" max="70" step="1" value="39" oninput="updatePP()"></div>
+      <div><button class="btn-tb btn-tb-ghost" onclick="ppNew()">Draw a new path</button></div>
+    </div>
+    <div class="tb-chart-box"><canvas id="pp-canvas" height="260" role="img" aria-label="Figure: a simulated path of the weekly share price over 26 weeks, with horizontal lines at the strike of 30 and the barrier of 25, and curves for the running minimum and the running average of the price; payoffs of four options on this path are stated in the readout"></canvas></div>
+    <div class="tb-readout" id="pp-readout" aria-live="polite"></div>
+  </div>
+
+  <div class="tb-check" data-check="cc18-2">
+    <div class="tb-check-label">Concept check 18.2</div>
+    <p class="tb-check-q">Six-month options on the same share, all with a strike of $30 where one applies, are listed below. Which ranking of their values, from highest to lowest, is correct?</p>
+    <button class="tb-check-opt" data-explain="The average price call is the cheapest of the four, not the dearest: the average of the prices varies less than the final price.">Average price call, vanilla call, floating lookback call, down-and-out call.</button>
+    <button class="tb-check-opt" data-correct="1" data-explain="Correct. The lookback call is always exercised and buys at the lowest price; the vanilla call exceeds the down-and-out call by the value of the down-and-in call; and the average price call is cheapest because an average varies less than a single price.">Floating lookback call, vanilla call, down-and-out call, average price call.</button>
+    <button class="tb-check-opt" data-explain="A knock-out option can never be worth more than the vanilla option with the same terms, since the two pay the same when the barrier is not reached and the knock-out pays nothing when it is.">Floating lookback call, down-and-out call, vanilla call, average price call.</button>
+    <div class="tb-check-fb" aria-live="polite"></div>
+  </div>
+
+  <h2 class="tb-section">18.5 &nbsp;Structured products</h2>
+  <p>A <strong>structured product</strong> is a security, usually a note issued by a bank, whose return is linked by a formula to the price of an asset or an index. Structured products are sold to investors, many of them individuals, who could not easily build the position themselves. Each can be decomposed into a bond and a package of options, vanilla or exotic, and the decomposition is the means of valuing it and of judging whether its price is fair.</p>
+  <p>A <strong>principal-protected note</strong> returns the investor's principal at maturity in every case, together with a share of any rise in an index. It is a zero-coupon bond and a call option on the index. The bank invests part of the principal in the bond, which grows to the principal at maturity, and spends the rest on calls. The proportion of the rise in the index that the investor receives is the <strong>participation rate</strong>.</p>
+
+  <div class="tb-worked">
+    <div class="tb-worked-label">Worked example 18.4 &mdash; A principal-protected note</div>
+    <div class="tb-worked-q">A bank offers a five-year note of $1,000 that repays the principal and a share of the rise in a stock index. The five-year risk-free rate is 4 percent with continuous compounding, the dividend yield on the index is 2 percent, and its volatility is 20 percent. Find the participation rate if the bank takes no profit.</div>
+    <div class="tb-worked-step"><div class="tb-worked-step-num">1</div><div class="tb-worked-step-text"><b>The bond.</b> \(1{,}000e^{-0.04\times5}=\$818.73\). This sum, invested today, repays the principal in five years.</div></div>
+    <div class="tb-worked-step"><div class="tb-worked-step-num">2</div><div class="tb-worked-step-text"><b>The options.</b> \(1{,}000-818.73=\$181.27\) remains. A five-year call at the money on $1,000 of the index costs $199.26 by the Black&ndash;Scholes&ndash;Merton formula with \(q=0.02\).</div></div>
+    <div class="tb-worked-step"><div class="tb-worked-step-num">3</div><div class="tb-worked-step-text"><b>Participation.</b> \(181.27/199.26=0.910\). The investor receives 91 percent of any rise in the index. If the bank prices the note to earn 2 percent of the principal, $20, the participation rate falls to \(161.27/199.26=81\) percent. Since the investor also forgoes the dividends on the index and the interest on the principal, the protection is not free.</div></div>
+  </div>
+
+  <p>The participation rate is higher when interest rates are high, since the bond then costs less, and when volatility is low, since the calls then cost less. It is common to raise the rate by replacing the vanilla call with an exotic one: an Asian call, a call on which the gain is capped, or an up-and-out call. Each is cheaper and pays less in some states. A <strong>reverse convertible</strong> pays a high coupon, but repays the principal in shares if the share price falls below a strike at maturity. It is a bond and a short put, and its high coupon is the premium of the put that the investor has sold. An <strong>autocallable note</strong> pays a coupon and is redeemed early if the index is above its initial level on any of a series of observation dates, and exposes the investor to losses, through a down-and-in put, if the index falls below a barrier. Such products have attracted the attention of regulators, because the risks that investors bear are often not apparent from the terms of sale.</p>
+
+  <h2 class="tb-section">18.6 &nbsp;Lessons from derivatives losses</h2>
+  <p>The losses listed in Table 18.1 are among the largest in the history of derivatives. Some fell on financial institutions, through trading by their employees; some on nonfinancial companies and local governments, which used derivatives in place of the hedges they intended; and some on funds whose strategies failed in conditions they had not foreseen.</p>
+  <div class="tb-tablewrap"><table class="tb-table"><caption>Table 18.1 &mdash; Selected losses from derivatives</caption>
+    <thead><tr><th scope="col">Organization</th><th scope="col">Year</th><th scope="col">Approximate loss</th><th scope="col">Instruments and cause</th></tr></thead>
+    <tbody>
+      <tr><th scope="row">Metallgesellschaft</th><td>1993</td><td>$1.3 billion</td><td>Long-term fixed-price oil supply contracts hedged with short-term futures rolled forward; funding of margin calls</td></tr>
+      <tr><th scope="row">Orange County, California</th><td>1994</td><td>$1.7 billion</td><td>Leveraged positions in interest rate products by the county treasurer; rise in interest rates</td></tr>
+      <tr><th scope="row">Procter &amp; Gamble</th><td>1994</td><td>$157 million</td><td>Highly leveraged interest rate swaps with Bankers Trust; rise in interest rates</td></tr>
+      <tr><th scope="row">Barings</th><td>1995</td><td>$1.4 billion</td><td>Unauthorized positions in Nikkei futures and options by a trader in Singapore; concealed losses</td></tr>
+      <tr><th scope="row">Long-Term Capital Management</th><td>1998</td><td>$4.6 billion</td><td>Highly leveraged convergence trades; flight to quality after the Russian default</td></tr>
+      <tr><th scope="row">Amaranth Advisors</th><td>2006</td><td>$6.6 billion</td><td>Positions in natural gas futures; adverse movement in spreads between delivery months</td></tr>
+      <tr><th scope="row">Soci&eacute;t&eacute; G&eacute;n&eacute;rale</th><td>2008</td><td>$7.2 billion</td><td>Unauthorized positions in stock index futures by a trader; concealed by fictitious trades</td></tr>
+      <tr><th scope="row">American International Group</th><td>2008</td><td>Tens of billions</td><td>Protection sold on senior CDO tranches; collateral demands</td></tr>
+      <tr><th scope="row">JPMorgan Chase</th><td>2012</td><td>$6.2 billion</td><td>Large positions in credit indices by its Chief Investment Office in London</td></tr>
+      <tr><th scope="row">Archegos Capital (losses to its banks)</th><td>2021</td><td>Over $10 billion</td><td>Concentrated share positions held through total return swaps with several banks</td></tr>
+    </tbody></table></div>
+
+  <h3 class="tb-subsection">Lessons for all users</h3>
+  <p>The first lesson is to <strong>define risk limits and enforce them</strong>. Every organization that uses derivatives should state clearly the risks that it is prepared to take, measure them daily by the methods of Chapters 13 and 14, and require that limits be observed. Limits are of no value if they are relaxed whenever a trader with a record of profits exceeds them; several of the losses in Table 18.1 grew from positions that had been profitable until they were not.</p>
+  <p>The second is that <strong>no one can consistently outguess the market</strong>. A trader who has made large profits in the past has not necessarily acquired a superior method; the profits may have come from taking large risks that happened to pay. Treasurers and fund managers who believed they could predict interest rates, the prices of commodities, or the convergence of spreads lost the most.</p>
+  <p>The third is <strong>not to underestimate the benefits of diversification</strong>, and its corollary, to beware of concentration. Amaranth and Archegos each held positions so large in relation to their markets that they could not be closed without moving prices against themselves. The losses of Archegos fell on its banks because each had financed its positions through total return swaps without knowing the size of the positions that it had with the others.</p>
+  <p>The fourth is to <strong>carry out scenario analyses and stress tests</strong>. Value at risk computed from a few years of normal markets says little about the losses in a crisis, when correlations rise and liquidity disappears. Long-Term Capital Management lost most of its capital in a few weeks of 1998, when spreads that it expected to narrow widened together across many markets.</p>
+
+  <h3 class="tb-subsection">Lessons for financial institutions</h3>
+  <p>Banks should <strong>monitor traders carefully</strong> and, above all, <strong>separate the front, middle, and back offices</strong>. Nick Leeson at Barings controlled both the trading desk and the settlement of its trades in Singapore, and could hide his losses in an account that he created for the purpose. J&eacute;r&ocirc;me Kerviel at Soci&eacute;t&eacute; G&eacute;n&eacute;rale had worked in the middle office and knew how to enter fictitious offsetting trades that escaped its controls. Banks should <strong>be cautious about models</strong>, especially for products whose prices cannot be checked against the market: a trade that appears very profitable when valued by a model may simply be mispriced by it. They should <strong>be conservative in recognizing day-one profits</strong>, spreading them over the life of a trade, so that traders are not rewarded for transactions that a model misvalues. They should <strong>not sell clients inappropriate products</strong>; Bankers Trust paid heavily, in money and reputation, for the swaps it sold to Procter &amp; Gamble and other clients who did not understand them. And they should <strong>not ignore liquidity risk</strong>: a position whose value is measured at mid-market prices may realize much less when it must be sold in a hurry.</p>
+
+  <h3 class="tb-subsection">Lessons for nonfinancial companies</h3>
+  <p>A company should <strong>fully understand the trades it makes</strong>. A treasurer who cannot value a derivative, or explain how its value would change in each plausible scenario, should not buy it. Procter &amp; Gamble's swaps paid a formula in which a rise in interest rates was multiplied many times; the company appears not to have understood the leverage until rates rose. A company should <strong>ensure that a hedger does not become a speculator</strong>. The treasurer of Orange County, Robert Citron, earned high returns for the county for several years by leveraged bets that interest rates would not rise, and was praised for it until 1994. A company should also <strong>be cautious about making the treasury department a profit center</strong>, since the pursuit of profit leads to the taking of risk. And it should consider the <strong>funding of its hedges</strong>. Metallgesellschaft's hedge was sound in principle, but when oil prices fell its futures required large margin payments at once, while the gains on its supply contracts would arrive only over ten years. Its parent company closed the hedge and realized the loss.</p>
+
+  <div class="tb-insight">
+    <div class="tb-insight-label">Historical note</div>
+    <p>Barings, founded in 1762, had financed the Louisiana Purchase and was the oldest merchant bank in London. Its trader in Singapore, Nick Leeson, began to hide losses in 1992 in an error account numbered 88888. By early 1995 he had accumulated very large long positions in Nikkei 225 futures and had sold straddles on the index, a bet that it would neither fall nor become volatile. The Kobe earthquake of 17 January 1995 caused the index to fall sharply. Leeson doubled his positions in an attempt to recover. The losses of &pound;827 million exceeded the bank's capital, and in March 1995 Barings was sold to ING for one pound.</p>
+  </div>
+
+  <div class="tb-check" data-check="cc18-3">
+    <div class="tb-check-label">Concept check 18.3</div>
+    <p class="tb-check-q">Which control would most directly have prevented the concealment of losses at Barings?</p>
+    <button class="tb-check-opt" data-explain="Value at risk measures the risk of reported positions. It cannot measure positions that are hidden from the risk system.">A daily calculation of value at risk for the Singapore office.</button>
+    <button class="tb-check-opt" data-correct="1" data-explain="Correct. Leeson could hide losses because he controlled the settlement of the trades he made. Separating trading from the recording and settlement of trades is the first control against concealment.">The separation of trading from the recording and settlement of trades.</button>
+    <button class="tb-check-opt" data-explain="Restrictions on products limit the kinds of risk taken; they do not prevent a trader who controls the books from hiding the losses on permitted products, which is what Leeson did.">A prohibition on trading options, permitting only futures.</button>
+    <div class="tb-check-fb" aria-live="polite"></div>
+  </div>
+
+  <h2 class="tb-section tb-starred-h">18.7 &nbsp;<span class="tb-star" title="Optional advanced section">&#9733;</span> Derivation of the prices of binary and chooser options</h2>
+  <div class="tb-starred">
+    <p class="tb-starred-note"><strong>Optional section.</strong> This section derives Result 18.4 from risk-neutral valuation, using a change of numeraire for the asset-or-nothing call, and Result 18.1 from put&ndash;call parity.</p>
+    <p><b>Cash-or-nothing call.</b> By Principle 10.1 its value is \(e^{-rT}Q\,\Pr(S_T&gt;K)\), with the probability computed in a risk-neutral world. There \(\ln S_T\) is normal with mean \(\ln S_0+(r-q-\sigma^{2}/2)T\) and standard deviation \(\sigma\sqrt T\), so that \[ \Pr(S_T&gt;K)=N\!\left(\frac{\ln(S_0/K)+(r-q-\sigma^{2}/2)T}{\sigma\sqrt T}\right)=N(d_2), \] and the value is \(Qe^{-rT}N(d_2)\).</p>
+    <p><b>Asset-or-nothing call.</b> Its value is \(e^{-rT}E[S_T\mathbf 1_{S_T&gt;K}]\). Write \(S_T=S_0e^{(r-q-\sigma^2/2)T+\sigma\sqrt T\varepsilon}\), with \(\varepsilon\) standard normal. Then \[ e^{-rT}E[S_T\mathbf 1_{S_T&gt;K}]=S_0e^{-qT}\int_{-d_2}^{\infty}\frac{1}{\sqrt{2\pi}}e^{-\sigma^{2}T/2+\sigma\sqrt T x-x^{2}/2}\,dx=S_0e^{-qT}\int_{-d_2}^{\infty}\frac{1}{\sqrt{2\pi}}e^{-(x-\sigma\sqrt T)^{2}/2}\,dx . \] The substitution \(u=x-\sigma\sqrt T\) gives the integral \(N(d_2+\sigma\sqrt T)=N(d_1)\), and the value is \(S_0e^{-qT}N(d_1)\). In the language of numeraires, \(N(d_1)\) is the probability that the call is exercised when the share, rather than the money market account, is the unit of value. Subtracting \(K\) cash-or-nothing calls of $1 from the asset-or-nothing call gives the payoff \(\max(S_T-K,0)\) and so the Black&ndash;Scholes&ndash;Merton formula.</p>
+    <p><b>Chooser option.</b> At time \(t_1\) the holder chooses the more valuable of the call and the put, and the chooser is worth \(\max(c_1,p_1)\), where \(c_1\) and \(p_1\) are their values then. For an asset with no income, put&ndash;call parity at time \(t_1\) gives \(p_1=c_1+Ke^{-r(T-t_1)}-S_{t_1}\). Hence \[ \max(c_1,p_1)=c_1+\max\!\left(0,\;Ke^{-r(T-t_1)}-S_{t_1}\right). \] The first term is the value at \(t_1\) of a call with strike \(K\) and expiration \(T\); the second is the payoff at \(t_1\) of a put with strike \(Ke^{-r(T-t_1)}\) expiring at \(t_1\). Valuing each today gives Result 18.1. With income at rate \(q\), the put is on \(e^{-q(T-t_1)}\) units of the asset, and its strike is \(Ke^{-(r-q)(T-t_1)}\).</p>
+  </div>
+
+  <h2 class="tb-section">Summary</h2>
+  <ul class="tb-list">
+    <li>Exotic options are options with nonstandard payoffs, traded over the counter. They match clients' exposures more closely, cost less than vanilla options that would serve, or express views on the path of a price or on volatility.</li>
+    <li>A chooser option permits its holder to decide at time \(t_1\) whether it is a call or a put; it is a call with strike \(K\) and expiration \(T\) and a put with strike \(Ke^{-r(T-t_1)}\) and expiration \(t_1\).</li>
+    <li>Barrier options are knocked out or knocked in when the price reaches a barrier. A knock-in and a knock-out option with the same terms sum to the vanilla option. Barrier options are cheaper than vanilla options, difficult to hedge near the barrier, and must be valued with allowance for discrete monitoring.</li>
+    <li>A cash-or-nothing call is worth \(Qe^{-rT}N(d_2)\) and an asset-or-nothing call \(S_0e^{-qT}N(d_1)\). A vanilla call is an asset-or-nothing call less \(K\) cash-or-nothing calls.</li>
+    <li>Lookback options pay according to the maximum or minimum price, are always exercised, and are expensive. Asian options pay according to the average price and are cheaper than vanilla options.</li>
+    <li>A structured product is a bond combined with options. A principal-protected note is a zero-coupon bond and a call; its participation rate is the money left after buying the bond divided by the price of the call.</li>
+    <li>The largest derivatives losses teach that risk limits must be defined and enforced, trading must be separated from settlement, models and day-one profits must be treated with caution, users must understand the products they trade, hedgers must not become speculators, and the funding and liquidity of positions must be considered.</li>
+  </ul>
+
+  <h2 class="tb-section">Exercises</h2>
+  <div class="tb-exercises">
+    <div class="tb-ex"><div class="tb-ex-q"><span class="tb-ex-num">18.1</span> A vanilla European put is worth $4.20. A down-and-out put with the same strike and expiration, and no rebate, is worth $3.10. Find the value of the down-and-in put. What happens to the value of the down-and-out put as the barrier is lowered toward zero?</div>
+      <button class="tb-ex-toggle" aria-expanded="false">Show solution</button>
+      <div class="tb-ex-sol" hidden><p>By Result 18.2 the down-and-in put is worth \(4.20-3.10=\$1.10\). As the barrier falls toward zero, the probability of reaching it falls toward zero, and the down-and-out put approaches the vanilla put, $4.20, while the down-and-in put approaches zero.</p></div></div>
+    <div class="tb-ex"><div class="tb-ex-q"><span class="tb-ex-num">18.2</span> A share that pays no dividend is priced at $50. Find the value of a one-year cash-or-nothing call that pays $1,000 if the share price exceeds $50 at expiration. The risk-free rate is 4 percent and the volatility 25 percent.</div>
+      <button class="tb-ex-toggle" aria-expanded="false">Show solution</button>
+      <div class="tb-ex-sol" hidden><p>\(d_2=[\ln1+(0.04-0.03125)]/0.25=0.035\) and \(N(d_2)=0.5140\). The value is \(1{,}000e^{-0.04}\times0.5140=\$493.81\).</p></div></div>
+    <div class="tb-ex"><div class="tb-ex-q"><span class="tb-ex-num">18.3</span> Value a chooser option on a share priced at $50 that pays no dividend, with a strike of $50, expiring in one year, with the choice made in six months. The risk-free rate is 6 percent and the volatility 30 percent.</div>
+      <button class="tb-ex-toggle" aria-expanded="false">Show solution</button>
+      <div class="tb-ex-sol" hidden><p>The one-year call with a strike of $50 is worth $7.36. The six-month put with a strike of \(50e^{-0.03}=\$48.52\) is worth $2.81. The chooser is worth \(7.36+2.81=\$10.17\).</p></div></div>
+    <div class="tb-ex"><div class="tb-ex-q"><span class="tb-ex-num">18.4</span> A three-year principal-protected note of $1,000 pays a share of the rise in an index. The three-year risk-free rate is 5 percent with continuous compounding, and a three-year call at the money on $1,000 of the index costs $156.75. Find the participation rate if the bank takes no profit. How would it change if interest rates fell?</div>
+      <button class="tb-ex-toggle" aria-expanded="false">Show solution</button>
+      <div class="tb-ex-sol" hidden><p>The bond costs \(1{,}000e^{-0.15}=\$860.71\), leaving $139.29 for calls. The participation rate is \(139.29/156.75=88.9\) percent. If interest rates fell, the bond would cost more and leave less for the calls, and the calls themselves would cost slightly less; the first effect dominates, and the participation rate would fall.</p></div></div>
+    <div class="tb-ex"><div class="tb-ex-q"><span class="tb-ex-num">18.5</span> An up-and-out call has a barrier equal to its strike. What is its value? What is the value of the corresponding up-and-in call? Explain.</div>
+      <button class="tb-ex-toggle" aria-expanded="false">Show solution</button>
+      <div class="tb-ex-sol" hidden><p>The up-and-out call is worthless: it can pay only if the price ends above the strike, and to do so the price must pass the barrier, which knocks the option out. The up-and-in call therefore equals the vanilla call, by Result 18.2: every path on which the vanilla call pays has reached the barrier.</p></div></div>
+    <div class="tb-ex"><div class="tb-ex-q"><span class="tb-ex-num">18.6</span> An airline buys jet fuel every day. Explain why an average price call on jet fuel over a quarter may be a better hedge for it than a vanilla call expiring at the end of the quarter, and why it costs less.</div>
+      <button class="tb-ex-toggle" aria-expanded="false">Show solution</button>
+      <div class="tb-ex-sol" hidden><p>The airline's cost over the quarter depends on the average price it pays, not on the price on the last day. The average price call pays when the average exceeds the strike, which matches the airline's exposure; a vanilla call might pay nothing although prices were high for most of the quarter and fell at its end, or pay much although they were low until its last days. The average of prices over a period has a lower volatility than the price on one date, so that the average price call is cheaper.</p></div></div>
+    <div class="tb-ex"><div class="tb-ex-q"><span class="tb-ex-num">18.7</span> A reverse convertible on Northwind shares pays a coupon of 12 percent for one year and repays the principal in cash if the share price at maturity is at least its initial level of $28, and in shares, at $28 each, if it is below. The one-year risk-free rate is 5 percent and a one-year put at the money is worth $3.57. Decompose the note, and explain the size of the coupon.</div>
+      <button class="tb-ex-toggle" aria-expanded="false">Show solution</button>
+      <div class="tb-ex-sol" hidden><p>The note is a one-year bond and a short position in a put with a strike of $28 on one share for each $28 of principal: when the price ends below $28, the investor receives shares worth less than the principal, which is the payoff of the short put. The put is worth \(3.57/28=12.8\) percent of the principal. The investor receives, in the coupon of 12 percent, about the risk-free rate of 5 percent plus a little over half the value of the put, whose present value per year is about 7 percentage points; the bank keeps the remainder of the premium.</p></div></div>
+    <div class="tb-ex"><div class="tb-ex-q"><span class="tb-ex-num">18.8</span> Metallgesellschaft had agreed to supply oil at fixed prices for ten years and hedged by buying short-term futures that it rolled forward each month. Explain why the hedge could be sound in economic terms and still lead to the failure of the strategy when oil prices fell.</div>
+      <button class="tb-ex-toggle" aria-expanded="false">Show solution</button>
+      <div class="tb-ex-sol" hidden><p>A fall in oil prices raised the value of the fixed-price supply contracts, since the company would buy oil more cheaply than the price at which it had agreed to sell it, and lowered the value of the long futures by a similar amount. But the futures were settled daily, so that the losses on them had to be paid in cash at once, while the gains on the supply contracts would be received only as oil was delivered over ten years. The hedge created a severe need for funds. The company's parent, alarmed by the cash outflows, closed the futures positions, realizing the losses on the hedge while keeping the long-dated contracts. The lesson is that a hedge must be judged by its cash flows as well as its values.</p></div></div>
+  </div>
+
+  <h2 class="tb-section">Further reading</h2>
+  <ul class="tb-list tb-refs">
+    <li>Broadie, M., Glasserman, P., and Kou, S. G. (1997). A continuity correction for discrete barrier options. <em>Mathematical Finance</em>, 7(4), 325&ndash;349.</li>
+    <li>Culp, C. L., and Miller, M. H. (1995). Metallgesellschaft and the economics of synthetic storage. <em>Journal of Applied Corporate Finance</em>, 7(4), 62&ndash;76.</li>
+    <li>Hull, J. C. (2022). <em>Options, Futures, and Other Derivatives</em> (11th ed.). Pearson. Chapters 26 and 36.</li>
+    <li>Jorion, P. (2000). Risk management lessons from Long-Term Capital Management. <em>European Financial Management</em>, 6(3), 277&ndash;300.</li>
+    <li>Lowenstein, R. (2000). <em>When Genius Failed: The Rise and Fall of Long-Term Capital Management.</em> Random House.</li>
+    <li>Rubinstein, M., and Reiner, E. (1991). Breaking down the barriers. <em>Risk</em>, 4(8), 28&ndash;35.</li>
+  </ul>
+
+  <div class="tb-quiz" id="quiz-ch18">
+    <div class="tb-quiz-header">
+      <h3>Chapter 18 Check &mdash; Exotic Options, Structured Products, and Lessons</h3>
+      <span>8 questions &middot; pass at 70%</span>
+    </div>
+    <div class="tb-quiz-body" id="quiz-ch18-body"></div>
+    <div class="tb-quiz-footer">
+      <button class="btn-tb btn-tb-primary" onclick="gradeQuiz('ch18')">Submit answers</button>
+      <button class="btn-tb btn-tb-ghost" onclick="buildQuiz('ch18')">New questions</button>
+      <span class="tb-quiz-score" id="quiz-ch18-score" aria-live="polite"></span>
+    </div>
+  </div>
+
+  <div class="tb-chapter-nav">
+    <button class="tb-chapter-nav-btn" onclick="showChapter('ch17')">&larr; Chapter 17</button>
+    <button class="tb-mark-complete" id="mc-ch18" onclick="markComplete('ch18')">Mark chapter complete</button>
+    <span></span>
+  </div>
+</div>
+
+
 
 </main>
 
@@ -5143,7 +5744,7 @@ var CHAPTERS = [
 ];
 
 /* Chapters whose content is built so far (others show a stub). */
-var BUILT = { ch1: true, ch2: true, ch3: true, ch4: true, ch5: true, ch6: true, ch7: true, ch8: true, ch9: true, ch10: true, ch11: true, ch12: true, ch13: true, ch14: true, ch15: true, ch16: true };
+var BUILT = { ch1: true, ch2: true, ch3: true, ch4: true, ch5: true, ch6: true, ch7: true, ch8: true, ch9: true, ch10: true, ch11: true, ch12: true, ch13: true, ch14: true, ch15: true, ch16: true, ch17: true, ch18: true };
 
 /* ════════════════════════════════════════════════════════════
    ACCESS GATING SEAM
@@ -7150,6 +7751,186 @@ function updateFG() {
 }
 
 CH_INIT.ch16 = function () { updateCV(); updateMC(); initFG(); };
+/* ════════════════════════════════════════════════════════════
+   CHAPTER 17 — credit derivatives and counterparty risk
+   ════════════════════════════════════════════════════════════ */
+/* CDS with annual payments, defaults at mid-year (Result 17.3); returns {s, A} */
+function fdCds(lam, R, r, T) {
+  var pay = 0, acc = 0, prot = 0, i;
+  for (i = 1; i <= T; i++) {
+    var Q0 = Math.exp(-lam * (i - 1)), Q1 = Math.exp(-lam * i), pd = Q0 - Q1;
+    pay += Q1 * Math.exp(-r * i); acc += pd * 0.5 * Math.exp(-r * (i - 0.5)); prot += pd * (1 - R) * Math.exp(-r * (i - 0.5));
+  }
+  return { s: prot / (pay + acc), A: pay + acc };
+}
+function cdPick(i) {
+  fdSeg(["cd-0", "cd-1", "cd-2"], i);
+  fdEl("cd-readout").innerHTML = (i === 2 ? "<strong>Correct.</strong> " : "<strong>Not correct.</strong> ") + "The spread of 1.5 percent is the expected loss per year, which is the probability of default multiplied by the proportion of the face value lost, 1 &minus; 0.40 = 0.60. The probability is therefore 0.015/0.60 = <strong>2.5 percent</strong> per year. The figure of 1.5 percent would be correct only if bondholders recovered nothing; 0.6 percent multiplies the spread by the loss rate instead of dividing by it. Section 17.2 develops the relation, and explains why this figure exceeds the rate at which such companies have actually defaulted.";
+}
+function updateCS() {
+  var lE = fdEl("cs-l"), rE = fdEl("cs-r"); if (!lE || !rE) { return; }
+  var lam = parseFloat(lE.value) / 100, R = parseFloat(rE.value) / 100, col = fdColors(), sv = [], df = [], t;
+  fdEl("cs-l-v").textContent = (lam * 100).toFixed(1) + "%"; fdEl("cs-r-v").textContent = Math.round(R * 100) + "%";
+  for (t = 0; t <= 10.0001; t += 0.25) { sv.push({ x: t, y: Math.exp(-lam * t) }); df.push({ x: t, y: 1 - Math.exp(-lam * t) }); }
+  fdChart("cs-canvas", [ fdLine("Probability of survival", sv, col.accent), fdLine("Cumulative probability of default", df, col.red, { borderDash: [6, 4] }), fdDot("Five years", 5, Math.exp(-lam * 5), col.gold) ],
+    { title: "Years", min: 0, max: 10, step: 1 }, { title: "Probability", min: 0, max: 1, step: 0.1 });
+  var c = fdCds(lam, R, 0.05, 5), bp = c.s * 10000, mtm = (c.s - 0.01) * c.A * 10000000;
+  fdEl("cs-readout").innerHTML = "With a hazard rate of " + (lam * 100).toFixed(1) + " percent, the probability of survival for five years is <strong>" + Math.exp(-lam * 5).toFixed(4) + "</strong>, and of default within five years " + (1 - Math.exp(-lam * 5)).toFixed(4) + ". With a recovery rate of " + Math.round(R * 100) + " percent the five-year CDS spread is <strong>" + bp.toFixed(0) + " basis points</strong>, against " + (lam * (1 - R) * 10000).toFixed(0) + " by the credit triangle &lambda;(1 &minus; R); the risky annuity is " + c.A.toFixed(3) + ". A swap bought at 100 basis points on $10 million is worth <strong>" + (mtm < 0 ? "&minus;" : "") + fdMoney(Math.abs(Math.round(mtm / 100) * 100)) + "</strong> to the buyer of protection.";
+}
+
+var EE = { p: 0 };
+function eeProd(i) { EE.p = i; fdSeg(["ee-p0", "ee-p1"], i); updateEE(); }
+function eeVal(p, t) { var T = 5; return p === 0 ? 0.3989 * 100e6 * 0.2 * Math.sqrt(t) : 0.3989 * 100e6 * 0.01 * Math.sqrt(t) * Math.max(T - t, 0); }
+function eeCva(p, lam, R) {
+  var c = 0, n = 20, dt = 5 / n, i;
+  for (i = 1; i <= n; i++) { var m = (i - 0.5) * dt; c += (1 - R) * (Math.exp(-lam * (i - 1) * dt) - Math.exp(-lam * i * dt)) * eeVal(p, m) * Math.exp(-0.05 * m); }
+  return c;
+}
+function updateEE() {
+  var lE = fdEl("ee-l"), rE = fdEl("ee-r"); if (!lE || !rE) { return; }
+  var lam = parseFloat(lE.value) / 100, R = parseFloat(rE.value) / 100, col = fdColors(), pts = [], other = [], t;
+  fdEl("ee-l-v").textContent = (lam * 100).toFixed(1) + "%"; fdEl("ee-r-v").textContent = Math.round(R * 100) + "%";
+  for (t = 0; t <= 5.0001; t += 0.05) { pts.push({ x: t, y: eeVal(EE.p, t) / 1e6 }); other.push({ x: t, y: eeVal(1 - EE.p, t) / 1e6 }); }
+  var names = ["Forward contract", "Interest rate swap"];
+  fdChart("ee-canvas", [ fdLine("Expected exposure: " + names[EE.p].toLowerCase(), pts, col.accent), fdLine(names[1 - EE.p], other, col.muted, { borderWidth: 2, borderDash: [6, 4] }) ],
+    { title: "Years", min: 0, max: 5, step: 0.5 }, { title: "Expected exposure ($ million)", min: 0, max: EE.p === 0 ? 20 : 20, step: 2 });
+  var cva = eeCva(EE.p, lam, R), alt = eeCva(1 - EE.p, lam, R);
+  var peak = EE.p === 0 ? "rises with the square root of time to " + fdMoney(Math.round(eeVal(0, 5) / 1e4) * 1e4) + " at maturity" : "peaks at " + fdMoney(Math.round(eeVal(1, 5 / 3) / 1e4) * 1e4) + " after 1.67 years, one third of the life, and falls to zero at maturity";
+  fdEl("ee-readout").innerHTML = "The expected exposure of the " + names[EE.p].toLowerCase() + " " + peak + ". With a counterparty hazard rate of " + (lam * 100).toFixed(1) + " percent and a recovery rate of " + Math.round(R * 100) + " percent, the CVA is <strong>" + fdMoney(Math.round(cva / 1000) * 1000) + "</strong>, against " + fdMoney(Math.round(alt / 1000) * 1000) + " for the " + names[1 - EE.p].toLowerCase() + ". The dealer should charge the counterparty at least the CVA, in addition to the value of the contract without default.";
+}
+
+var HZ = { g: 0 };
+function hzF(x, z) { var l = x / 100; return HZ.g === 0 ? Math.exp(-l * z) : Math.exp(-l * Math.max(z - 1, 0)) - Math.exp(-l * z); }
+function hzPick(i) { HZ.g = i; fdSeg(["hz-g0", "hz-g1"], i); initHZ(); }
+function initHZ() {
+  if (!fdEl("hz3d")) { return; }
+  if (HZ.api && HZ.api.dispose) { HZ.api.dispose(); }
+  var yr = HZ.g === 0 ? [0, 1] : [0, 0.1], yt = HZ.g === 0 ? [ { v: 0, t: "0" }, { v: 0.5, t: "0.5" }, { v: 1, t: "1" } ] : [ { v: 0, t: "0" }, { v: 0.05, t: "0.05" }, { v: 0.1, t: "0.10" } ];
+  HZ.api = fdSurface3D("hz3d", { f: hzF, x: [0, 10], z: [HZ.g === 0 ? 0 : 1, 10], y: yr, nx: 40, nz: 36,
+    xLabel: "Hazard rate (%)", zLabel: "Years", yLabel: HZ.g === 0 ? "Survival probability" : "Default in the year",
+    xTicks: [ { v: 0, t: "0" }, { v: 5, t: "5" }, { v: 10, t: "10" } ], zTicks: HZ.g === 0 ? [ { v: 0, t: "0" }, { v: 5, t: "5" }, { v: 10, t: "10" } ] : [ { v: 1, t: "1" }, { v: 5, t: "5" }, { v: 10, t: "10" } ], yTicks: yt });
+  var tb = fdEl("hz-table");
+  if (tb) {
+    var Ls = [0.5, 1, 2, 3, 5, 7.5, 10], Ts = [1, 2, 5, 10], i, j;
+    var h = '<table class="tb-table"><caption>' + (HZ.g === 0 ? "Probability of survival" : "Unconditional probability of default in the year ending at the time shown") + " by hazard rate (percent per year) and time in years</caption><thead><tr><th scope=\"col\">Hazard rate</th>";
+    for (j = 0; j < Ts.length; j++) { h += '<th scope="col">' + Ts[j] + "</th>"; }
+    h += "</tr></thead><tbody>";
+    for (i = 0; i < Ls.length; i++) { h += '<tr><th scope="row">' + Ls[i] + "%</th>"; for (j = 0; j < Ts.length; j++) { h += "<td>" + hzF(Ls[i], Ts[j]).toFixed(4) + "</td>"; } h += "</tr>"; }
+    tb.innerHTML = h + "</tbody></table>";
+  }
+  updateHZ();
+}
+function updateHZ() {
+  var tE = fdEl("hz-t"), lE = fdEl("hz-l"); if (!tE || !lE) { return; }
+  var t = parseFloat(tE.value), l = parseFloat(lE.value);
+  if (HZ.g === 1 && t < 1) { t = 1; }
+  fdEl("hz-t-v").textContent = t.toFixed(1) + " years"; fdEl("hz-l-v").textContent = l.toFixed(1) + "%";
+  if (HZ.api) { HZ.api.setSlice(t); HZ.api.setMarker(l, t); }
+  var v = hzF(l, t);
+  fdEl("hz-readout").innerHTML = HZ.g === 0 ?
+    "With a hazard rate of " + l.toFixed(1) + " percent, the probability of survival for " + t.toFixed(1) + " years is <strong>" + v.toFixed(4) + "</strong>, and the probability of default within that time " + (1 - v).toFixed(4) + ". Each slice along the time axis is an exponential curve; each slice along the hazard axis is the same exponential, since survival depends only on the product &lambda;t." :
+    "With a hazard rate of " + l.toFixed(1) + " percent, the unconditional probability of default in the year ending at " + t.toFixed(1) + " years is <strong>" + v.toFixed(4) + "</strong>. It declines over time, because fewer companies survive to default, and the decline is steeper when the hazard rate is high. The conditional probability for every year is 1 &minus; e<sup>&minus;&lambda;</sup> = " + (1 - Math.exp(-l / 100)).toFixed(4) + ".";
+}
+
+CH_INIT.ch17 = function () { updateCS(); updateEE(); initHZ(); };
+
+/* ════════════════════════════════════════════════════════════
+   CHAPTER 18 — exotic options and structured products
+   ════════════════════════════════════════════════════════════ */
+/* European barrier calls, continuous monitoring, no rebate. kind: "di", "do", "ui", "uo" */
+function fdBarrier(kind, S, K, H, r, q, sig, T) {
+  var c = fdGbs(S, K, r, q, sig, T).c;
+  if (T <= 0) { return kind === "do" ? (S > H ? Math.max(S - K, 0) : 0) : kind === "uo" ? (S < H ? Math.max(S - K, 0) : 0) : 0; }
+  if ((kind === "do" || kind === "di") && S <= H) { return kind === "di" ? c : 0; }
+  if ((kind === "uo" || kind === "ui") && S >= H) { return kind === "ui" ? c : 0; }
+  var st = sig * Math.sqrt(T), lam = (r - q + 0.5 * sig * sig) / (sig * sig), A = S * Math.exp(-q * T), B = K * Math.exp(-r * T), N = fdNormCdf;
+  var y = Math.log(H * H / (S * K)) / st + lam * st, x1 = Math.log(S / H) / st + lam * st, y1 = Math.log(H / S) / st + lam * st;
+  var p1 = Math.pow(H / S, 2 * lam), p2 = Math.pow(H / S, 2 * lam - 2), v;
+  if (kind === "di" || kind === "do") {
+    if (H <= K) { v = A * p1 * N(y) - B * p2 * N(y - st); return kind === "di" ? v : c - v; }
+    v = A * N(x1) - B * N(x1 - st) - A * p1 * N(y1) + B * p2 * N(y1 - st); return kind === "do" ? v : c - v;
+  }
+  if (H <= K) { return kind === "uo" ? 0 : c; }
+  v = A * N(x1) - B * N(x1 - st) - A * p1 * (N(-y) - N(-y1)) + B * p2 * (N(-y + st) - N(-y1 + st));
+  return kind === "ui" ? v : c - v;
+}
+function biPick(i) {
+  fdSeg(["bi-0", "bi-1", "bi-2"], i);
+  fdEl("bi-readout").innerHTML = (i === 0 ? "<strong>Correct.</strong> " : "<strong>Not correct.</strong> ") + "On every path exactly one of the two barrier calls exists at expiration: the knock-out call if the price never reaches $25, the knock-in call if it does. Together they pay what the ordinary call pays, so that their prices must sum to its price. The knock-in call is worth $2.55 &minus; $1.92 = <strong>$0.63</strong>. Its low price reflects the low probability that the share falls from $28 to $25 within six months <em>and</em> then recovers above $30. Section 18.2 states the parity and the formulas.";
+}
+var BV = { d: 0 };
+function bvDir(i) {
+  BV.d = i; fdSeg(["bv-d0", "bv-d1"], i);
+  var h = fdEl("bv-h"); if (h) { if (i === 0) { h.min = "18"; h.max = "27.5"; h.value = "25"; } else { h.min = "31"; h.max = "60"; h.value = "40"; } }
+  updateBV();
+}
+function updateBV() {
+  var vE = fdEl("bv-v"), hE = fdEl("bv-h"); if (!vE || !hE) { return; }
+  var sig = parseFloat(vE.value) / 100, Hm = parseFloat(hE.value), S = 28, K = 30, r = 0.05, T = 0.5, col = fdColors(), outP = [], inP = [], H;
+  fdEl("bv-v-v").textContent = Math.round(sig * 100) + "%"; fdEl("bv-h-v").textContent = "$" + Hm.toFixed(Hm % 1 ? 1 : 0);
+  var c = fdGbs(S, K, r, 0, sig, T).c, ko = BV.d === 0 ? "do" : "uo", ki = BV.d === 0 ? "di" : "ui", lo = BV.d === 0 ? 15 : 30.5, hi = BV.d === 0 ? 27.9 : 60;
+  for (H = lo; H <= hi + 1e-9; H += (hi - lo) / 80) { outP.push({ x: H, y: fdBarrier(ko, S, K, H, r, 0, sig, T) }); inP.push({ x: H, y: fdBarrier(ki, S, K, H, r, 0, sig, T) }); }
+  var vo = fdBarrier(ko, S, K, Hm, r, 0, sig, T), vi = fdBarrier(ki, S, K, Hm, r, 0, sig, T), yTop = Math.ceil(c * 1.15);
+  var nm = BV.d === 0 ? ["Down-and-out call", "Down-and-in call"] : ["Up-and-out call", "Up-and-in call"];
+  fdChart("bv-canvas", [ fdLine(nm[0], outP, col.accent), fdLine(nm[1], inP, col.red, { borderDash: [6, 4] }), fdLine("Vanilla call", [ { x: lo, y: c }, { x: hi, y: c } ], col.muted, { borderWidth: 2 }), fdDot("Marked barrier", Hm, vo, col.gold) ],
+    { title: "Barrier ($)", min: BV.d === 0 ? 15 : 30, max: BV.d === 0 ? 28 : 60, step: BV.d === 0 ? 1 : 5 }, { title: "Option value ($)", min: 0, max: yTop, step: yTop > 8 ? 1 : 0.5 });
+  fdEl("bv-readout").innerHTML = "With a barrier of $" + Hm.toFixed(Hm % 1 ? 1 : 0) + " and a volatility of " + Math.round(sig * 100) + " percent, the " + nm[0].toLowerCase() + " is worth <strong>$" + vo.toFixed(2) + "</strong> and the " + nm[1].toLowerCase() + " <strong>$" + vi.toFixed(2) + "</strong>; together they make the vanilla call, $" + c.toFixed(2) + ". The knock-out call saves " + (c > 0 ? Math.round((1 - vo / c) * 100) : 0) + " percent of the vanilla premium. " +
+    (BV.d === 0 ? "A higher volatility makes a fall to the barrier more likely and widens the saving." : "An up barrier removes the paths on which the call pays most, so that the saving is large even for a barrier well above the strike.");
+}
+
+var B3 = { g: 0, K: 30, H: 40 };
+function b3V(S, T) { return fdBarrier("uo", S, B3.K, B3.H, 0.05, 0, 0.39, T); }
+function b3D(S, T) { var h = 0.05; if (S + h >= B3.H) { return (b3V(S, T) - b3V(S - h, T)) / h; } return (b3V(S + h, T) - b3V(S - h, T)) / (2 * h); }
+function b3F(x, z) { return B3.g === 0 ? b3V(x, z) : Math.max(-3, b3D(x, z)); }
+function b3Pick(i) { B3.g = i; fdSeg(["b3-g0", "b3-g1"], i); initB3(); }
+function initB3() {
+  if (!fdEl("b33d")) { return; }
+  if (B3.api && B3.api.dispose) { B3.api.dispose(); }
+  B3.api = fdSurface3D("b33d", { f: b3F, x: [15, 40], z: [0.02, 1], y: B3.g === 0 ? [0, 10] : [-3, 1], nx: 50, nz: 30,
+    xLabel: "Share price ($)", zLabel: "Years to expiration", yLabel: B3.g === 0 ? "Value ($)" : "Delta",
+    xTicks: [ { v: 15, t: "15" }, { v: 30, t: "K = 30" }, { v: 40, t: "H = 40" } ], zTicks: [ { v: 0.02, t: "0.02" }, { v: 0.5, t: "0.5" }, { v: 1, t: "1" } ],
+    yTicks: B3.g === 0 ? [ { v: 0, t: "0" }, { v: 5, t: "5" }, { v: 10, t: "10" } ] : [ { v: -3, t: "−3" }, { v: -1, t: "−1" }, { v: 0, t: "0" }, { v: 1, t: "1" } ] });
+  var tb = fdEl("b3-table");
+  if (tb) {
+    var Ss = [20, 25, 28, 30, 32, 34, 36, 38, 39.5], Ts = [0.02, 0.1, 0.25, 0.5, 1], i, j;
+    var h = '<table class="tb-table"><caption>' + (B3.g === 0 ? "Value" : "Delta") + " of an up-and-out call with a strike of $30 and a barrier of $40 (volatility 39%, r = 5%), by share price and time to expiration in years</caption><thead><tr><th scope=\"col\">Share price</th>";
+    for (j = 0; j < Ts.length; j++) { h += '<th scope="col">' + Ts[j].toFixed(2) + "</th>"; }
+    h += "</tr></thead><tbody>";
+    for (i = 0; i < Ss.length; i++) { h += '<tr><th scope="row">$' + Ss[i] + "</th>"; for (j = 0; j < Ts.length; j++) { h += "<td>" + (B3.g === 0 ? b3V(Ss[i], Ts[j]).toFixed(3) : fdSigned(b3D(Ss[i], Ts[j]), 3)) + "</td>"; } h += "</tr>"; }
+    tb.innerHTML = h + "</tbody></table>";
+  }
+  updateB3();
+}
+function updateB3() {
+  var tE = fdEl("b3-t"), sE = fdEl("b3-s"); if (!tE || !sE) { return; }
+  var T = parseFloat(tE.value), S = Math.min(parseFloat(sE.value), 39.95);
+  fdEl("b3-t-v").textContent = T.toFixed(2) + " years"; fdEl("b3-s-v").textContent = "$" + parseFloat(sE.value).toFixed(parseFloat(sE.value) % 1 ? 1 : 0);
+  if (B3.api) { B3.api.setSlice(T); B3.api.setMarker(S, T); }
+  var v = b3V(S, T), d = b3D(S, T), van = fdGbs(S, 30, 0.05, 0, 0.39, T).c, best = 15, bv = 0, x;
+  for (x = 15; x < 40; x += 0.1) { var w = b3V(x, T); if (w > bv) { bv = w; best = x; } }
+  fdEl("b3-readout").innerHTML = "With " + T.toFixed(2) + " years to expiration and a share price of $" + S.toFixed(2) + ", the up-and-out call is worth <strong>$" + v.toFixed(3) + "</strong> (the vanilla call $" + van.toFixed(3) + ") and its delta is <strong>" + fdSigned(d, 3) + "</strong>. At this time to expiration the value is greatest, $" + bv.toFixed(2) + ", at a share price of about $" + best.toFixed(1) + "; above it, a higher share price brings the option nearer to being knocked out, and delta is negative.";
+}
+
+var PP = { seed: 7 };
+function ppNew() { PP.seed = (PP.seed * 7919 + 13) % 1000003; updatePP(); }
+function updatePP() {
+  var vE = fdEl("pp-v"); if (!vE) { return; }
+  var sig = parseFloat(vE.value) / 100, rng = fdSeeded(PP.seed), dt = 0.5 / 26, S = 28, path = [ { x: 0, y: 28 } ], mins = [ { x: 0, y: 28 } ], avgs = [], mn = 28, tot = 0, k, col = fdColors(), hit = false;
+  fdEl("pp-v-v").textContent = Math.round(sig * 100) + "%";
+  for (k = 1; k <= 26; k++) {
+    S = S * Math.exp((0.05 - 0.5 * sig * sig) * dt + sig * Math.sqrt(dt) * fdNormal(rng));
+    path.push({ x: k, y: S }); if (S < mn) { mn = S; } if (S <= 25) { hit = true; } mins.push({ x: k, y: mn }); tot += S; avgs.push({ x: k, y: tot / k });
+  }
+  var top = 10 * Math.ceil(Math.max(45, S + 3, 31) / 10), bot = Math.min(15, 5 * Math.floor((mn - 2) / 5));
+  fdChart("pp-canvas", [ fdLine("Share price", path, col.accent, { pointRadius: 2 }), fdLine("Running minimum", mins, col.red, { borderWidth: 2 }), fdLine("Running average", avgs, col.green, { borderWidth: 2 }),
+    fdLine("Strike $30", [ { x: 0, y: 30 }, { x: 26, y: 30 } ], col.gold, { borderWidth: 2, borderDash: [6, 4] }), fdLine("Barrier $25", [ { x: 0, y: 25 }, { x: 26, y: 25 } ], col.muted, { borderWidth: 2, borderDash: [2, 3] }) ],
+    { title: "Week", min: 0, max: 26, step: 2 }, { title: "Share price ($)", min: Math.max(0, bot), max: top, step: 5 });
+  var avg = tot / 26, van = Math.max(S - 30, 0), asian = Math.max(avg - 30, 0), look = S - mn, dao = hit ? 0 : van;
+  var vv = fdGbs(28, 30, 0.05, 0, sig, 0.5).c, vdo = fdBarrier("do", 28, 30, 25, 0.05, 0, sig, 0.5);
+  fdEl("pp-readout").innerHTML = "On this path the share ends at <strong>$" + S.toFixed(2) + "</strong>, its lowest weekly price is $" + mn.toFixed(2) + ", and its average $" + avg.toFixed(2) + (hit ? "; the price reached the barrier of $25" : "; the price never reached the barrier of $25") + ". Payoffs: vanilla call <strong>$" + van.toFixed(2) + "</strong>; average price call <strong>$" + asian.toFixed(2) + "</strong>; floating lookback call <strong>$" + look.toFixed(2) + "</strong>; down-and-out call <strong>$" + dao.toFixed(2) + "</strong>" + (hit && van > 0 ? ", although the vanilla call pays, because the option was knocked out" : "") + ". With a volatility of " + Math.round(sig * 100) + " percent the vanilla call is worth $" + vv.toFixed(2) + " and the down-and-out call $" + vdo.toFixed(2) + " (continuous monitoring); the lookback call, which is always exercised, is worth much more, and the average price call much less.";
+}
+
+CH_INIT.ch18 = function () { updateBV(); initB3(); updatePP(); };
 
 /* ════════════════════════════════════════════════════════════
    ACCESSIBILITY WIDGET  (text size · contrast · colour-safe)
@@ -8187,6 +8968,128 @@ QUIZ_GENERATORS.ch16 = [
     { s: "In a binomial tree, theta is estimated from:", c: [ "The values at the initial node and at the middle node after two steps, where the price of the asset is the same", "The values at the two nodes after one step", "The values at the three nodes after two steps", "A second tree with a different volatility" ] }
   ]); }
 ];
+/* ── Chapter 17–18 quiz generators ───────────────────────────── */
+function fmtBp(v) { return Math.round(v * 10000) + " basis points"; }
+function fmtMoneyK(v) { var r = Math.round(v / 100) * 100; return (r < 0 ? "−" : "") + fdMoney(Math.abs(r)); }
+function fmtPct1s(v) { return (Math.round(v * 1000) / 10).toFixed(1) + " percent"; }
+
+QUIZ_GENERATORS.ch17 = [
+  /* Q1 — probability of survival */
+  function () {
+    var lam = pick([0.01, 0.015, 0.02, 0.025, 0.03, 0.04]), t = pick([2, 3, 4, 5, 7, 10]);
+    var ans = Math.exp(-lam * t);
+    return { prompt: "The hazard rate of a company is " + (lam * 100).toFixed(1) + " percent per year and is constant. The probability that the company survives " + t + " years without default is:", choices: strChoices(ans, [1 - lam * t + lam, 1 - Math.exp(-lam * t), Math.pow(1 - lam, t) - 0.003, Math.exp(-lam * (t - 1))], fmt4), correct: 0 };
+  },
+  /* Q2 — unconditional probability of default in a year */
+  function () {
+    var lam = pick([0.02, 0.03, 0.04, 0.05]), n = pick([2, 3, 4, 5]);
+    var ans = Math.exp(-lam * (n - 1)) - Math.exp(-lam * n);
+    return { prompt: "With a constant hazard rate of " + (lam * 100).toFixed(0) + " percent per year, the unconditional probability, as seen today, that a company defaults during year " + n + " is:", choices: strChoices(ans, [1 - Math.exp(-lam), 1 - Math.exp(-lam * n), lam, Math.exp(-lam * n)], fmt4), correct: 0 };
+  },
+  /* Q3 — hazard rate from a credit spread */
+  function () {
+    var s = pick([0.012, 0.015, 0.018, 0.024, 0.03]), R = pick([0.2, 0.3, 0.4, 0.5]);
+    var ans = s / (1 - R);
+    return { prompt: "The bonds of a company yield " + Math.round(s * 10000) + " basis points more than risk-free bonds of the same maturity. The expected recovery rate is " + Math.round(R * 100) + " percent. The average risk-neutral hazard rate is approximately:", choices: strChoices(ans * 100, [s * 100, s * (1 - R) * 100, s / R * 100, s * (1 + R) * 100], fmtPct2), correct: 0 };
+  },
+  /* Q4 — the credit triangle */
+  function () {
+    var lam = pick([0.01, 0.015, 0.02, 0.025, 0.04]), R = pick([0.25, 0.35, 0.4, 0.6]);
+    var ans = lam * (1 - R);
+    return { prompt: "The risk-neutral hazard rate of a reference entity is " + (lam * 100).toFixed(1) + " percent and the recovery rate is " + Math.round(R * 100) + " percent. By the credit triangle, the spread of a credit default swap on the entity is approximately:", choices: strChoices(ans, [lam, lam * R, lam / (1 - R), lam * (1 + R)], fmtBp), correct: 0 };
+  },
+  /* Q5 — settlement on default */
+  function () {
+    var L = pick([5, 10, 20, 25, 50]) * 1e6, R = pick([0.3, 0.35, 0.38, 0.42, 0.45]), s = pick([0.008, 0.012, 0.015]);
+    var ans = (1 - R) * L;
+    return { prompt: "A buyer of protection holds a credit default swap with a notional principal of " + fdMoney(L) + " at a spread of " + Math.round(s * 10000) + " basis points. The reference entity defaults, and the auction sets the recovery rate at " + Math.round(R * 100) + " percent. Under cash settlement the seller of protection pays:", choices: strChoices(ans, [R * L, L, s * L, (1 - R - s) * L], fmtUsd0), correct: 0 };
+  },
+  /* Q6 — marking a CDS to market */
+  function () {
+    var s0 = pick([60, 80, 100, 120]), ds = pick([-40, -30, 30, 50, 70]), A = pick([3.6, 4.0, 4.2, 4.5]), L = pick([10, 20]) * 1e6, who = pick([0, 1]);
+    var s = s0 + ds, v = (s - s0) / 10000 * A * L * (who === 0 ? 1 : -1);
+    return { prompt: "A bank " + (who === 0 ? "bought" : "sold") + " protection on a reference entity at " + s0 + " basis points with a notional principal of " + fdMoney(L) + ". The spread for the remaining life is now " + s + " basis points and the risky annuity is " + A.toFixed(1) + ". The value of the swap to the bank is:", choices: strChoices(v, [-v, v / A, (s / 10000) * A * L, v * A], fmtMoneyK), correct: 0 };
+  },
+  /* Q7 — CVA of a purchased option, or exposure with netting */
+  function () {
+    if (Math.random() < 0.5) {
+      var f = pick([1, 2, 3, 5, 8]) * 1e6, lam = pick([0.01, 0.02, 0.03]), R = pick([0.3, 0.4, 0.5]), T = pick([1, 2, 3]);
+      var pd = 1 - Math.exp(-lam * T), ans = (1 - R) * f * pd;
+      return { prompt: "A company buys from a dealer a " + T + "-year option, settled at expiration, worth " + fdMoney(f) + " ignoring default. The dealer's hazard rate is " + (lam * 100).toFixed(0) + " percent and its recovery rate " + Math.round(R * 100) + " percent. The credit value adjustment is approximately:", choices: strChoices(ans, [R * f * pd, f * pd, (1 - R) * f * lam, (1 - R) * f * pd * T], fmtMoneyK), correct: 0 };
+    }
+    var a = pick([6, 8, 10, 12]), b = -pick([3, 5, 7]), c = pick([2, 4]), d = -pick([1, 2, 6]);
+    var net = Math.max(a + b + c + d, 0), gross = a + c;
+    return { prompt: "A dealer has four uncollateralized derivatives with one counterparty, worth +$" + a + " million, −$" + (-b) + " million, +$" + c + " million, and −$" + (-d) + " million to the dealer. Under a netting agreement, the dealer's exposure to the counterparty is:",
+      choices: distinct4(["$" + net + " million", "$" + gross + " million", "$" + (a - b + c - d) + " million", "$" + Math.abs(a + b + c + d + 5) + " million", "$" + (gross + 1) + " million"]), correct: 0 };
+  },
+  /* Q8 — concepts */
+  function () { return poolQ([
+    { s: "The risk-neutral probabilities of default implied by bond prices are much higher than historical rates of default. Which use of the risk-neutral probabilities is appropriate?", c: [ "Valuing a credit default swap", "Forecasting the actual losses on a loan portfolio", "Estimating real-world value at risk from credit", "Setting the reserves required by a stress test" ] },
+    { s: "As the default correlation among the companies in a CDO portfolio rises, holding their individual default probabilities fixed:", c: [ "The senior tranche becomes riskier and the equity tranche safer", "Every tranche becomes riskier", "The senior tranche becomes safer and the equity tranche riskier", "The risk of the tranches is unchanged" ] },
+    { s: "For an uncollateralized interest rate swap, the expected exposure of a dealer to its counterparty over the life of the swap typically:", c: [ "Rises and then falls, peaking about one third of the way through the life", "Rises steadily until maturity", "Is constant over the life", "Is greatest at the start of the swap" ] },
+    { s: "The debit value adjustment of a bank's derivatives portfolio increases when:", c: [ "The bank's own credit spread widens", "The credit spreads of its counterparties widen", "It posts more collateral", "The value of its portfolio to the bank rises" ] },
+    { s: "A buyer of CDS protection who does not own bonds of the reference entity is in a position most similar to that of:", c: [ "The holder of a put option speculating on a decline", "A bondholder who has insured the bonds", "The writer of a call option", "A shareholder of the reference entity" ] },
+    { s: "The receiver of the total return in a total return swap on a corporate bond:", c: [ "Obtains the economic exposure of owning the bond without buying it", "Is protected against a default of the bond issuer", "Receives a fixed rate of interest", "Pays the coupons on the bond" ] }
+  ]); }
+];
+
+QUIZ_GENERATORS.ch18 = [
+  /* Q1 — knock-in / knock-out parity */
+  function () {
+    var c = pick([2.55, 3.40, 4.20, 5.10, 6.30]), f = pick([0.2, 0.35, 0.5, 0.7]), ko = Math.round(c * (1 - f) * 100) / 100, kind = pick(["call", "put"]), dir = pick(["down", "up"]);
+    var ans = c - ko;
+    return { prompt: "A European vanilla " + kind + " is worth $" + c.toFixed(2) + ". A " + dir + "-and-out " + kind + " with the same strike and expiration, and no rebate, is worth $" + ko.toFixed(2) + ". The " + dir + "-and-in " + kind + " is worth:", choices: strChoices(ans, [c + ko, ko, c, ko - ans], fmtPx2), correct: 0 };
+  },
+  /* Q2 — cash-or-nothing call */
+  function () {
+    var Q = pick([100, 500, 1000]), n2 = pick([0.38, 0.45, 0.51, 0.56, 0.62]), r = pick([0.03, 0.04, 0.05]), T = pick([0.5, 1, 2]);
+    var ans = Q * Math.exp(-r * T) * n2;
+    return { prompt: "A cash-or-nothing call pays $" + Q + " if the share price exceeds the strike at expiration in " + (T === 0.5 ? "six months" : T === 1 ? "one year" : "two years") + ". The risk-free rate is " + (r * 100).toFixed(0) + " percent with continuous compounding, and N(d<sub>2</sub>) = " + n2.toFixed(2) + ". The value of the option is:", choices: strChoices(ans, [Q * n2, Q * Math.exp(-r * T) * (1 - n2), Q * Math.exp(-r * T), Q * n2 * Math.exp(r * T)], fmtPx2), correct: 0 };
+  },
+  /* Q3 — decomposition of a vanilla call */
+  function () {
+    var K = pick([25, 30, 40, 50]), aon = Math.round(K * pick([0.45, 0.55, 0.62]) * 100) / 100, con = Math.round(pick([0.33, 0.38, 0.44, 0.5]) * 10000) / 10000;
+    var ans = aon - K * con;
+    if (ans <= 0.3) { aon = Math.round((K * con + pick([1.2, 2.1, 3.3])) * 100) / 100; ans = aon - K * con; }
+    return { prompt: "An asset-or-nothing call on a share with a strike of $" + K + " is worth $" + aon.toFixed(2) + ", and a cash-or-nothing call with the same strike and expiration paying $1 is worth $" + con.toFixed(4) + ". The vanilla European call with this strike and expiration is worth:", choices: strChoices(ans, [aon - con, aon + K * con, K * con, aon * con], fmtPx2), correct: 0 };
+  },
+  /* Q4 — the put in a chooser option */
+  function () {
+    var K = pick([30, 40, 50, 60]), r = pick([0.04, 0.05, 0.06]), T = pick([1, 1.5]), t1 = pick([0.25, 0.5]);
+    var ans = K * Math.exp(-r * (T - t1));
+    return { prompt: "A chooser option on a share that pays no dividend lets the holder decide in " + (t1 === 0.25 ? "three months" : "six months") + " whether it is a European call or put with a strike of $" + K + " expiring in " + (T === 1 ? "one year" : "eighteen months") + ". The risk-free rate is " + (r * 100).toFixed(0) + " percent. The chooser equals the call plus a put expiring at the decision date with a strike of:", choices: strChoices(ans, [K, K * Math.exp(-r * T), K * Math.exp(-r * t1), K * Math.exp(r * (T - t1))], fmtPx2), correct: 0 };
+  },
+  /* Q5 — participation rate of a principal-protected note */
+  function () {
+    var r = pick([0.03, 0.04, 0.05]), T = pick([3, 4, 5]), call = pick([140, 160, 180, 200]);
+    var bond = 1000 * Math.exp(-r * T), ans = (1000 - bond) / call;
+    return { prompt: "A bank issues a " + T + "-year principal-protected note of $1,000 on a stock index and takes no profit. The " + T + "-year risk-free rate is " + (r * 100).toFixed(0) + " percent with continuous compounding, and a " + T + "-year call at the money on $1,000 of the index costs $" + call + ". The participation rate is approximately:", choices: strChoices(ans, [bond / 1000, (1000 - bond) / 1000, call / (1000 - bond), 1000 * (1 - Math.exp(-r)) / call], fmtPct1s), correct: 0 };
+  },
+  /* Q6 — discrete monitoring correction */
+  function () {
+    var H = pick([80, 90, 95]), sig = pick([0.2, 0.25, 0.3]), freq = pick([0, 1]), dt = freq === 0 ? 1 / 252 : 1 / 52, dir = pick(["down", "up"]);
+    var f = Math.exp(0.5826 * sig * Math.sqrt(dt)), ans = dir === "down" ? H / f : H * f;
+    return { prompt: "A " + dir + "-and-out option has a barrier of $" + H + " observed once a " + (freq === 0 ? "trading day (252 a year)" : "week (52 a year)") + ". The volatility is " + Math.round(sig * 100) + " percent. By the correction of Broadie, Glasserman, and Kou, the continuous-monitoring formula should be applied with a barrier of:", choices: strChoices(ans, [dir === "down" ? H * f : H / f, H, dir === "down" ? H - 0.5826 * sig : H + 0.5826 * sig, dir === "down" ? H / Math.exp(0.5826 * sig) : H * Math.exp(0.5826 * sig)], fmtPx2), correct: 0 };
+  },
+  /* Q7 — exotic options: concepts */
+  function () { return poolQ([
+    { s: "An up-and-out call has a barrier equal to its strike. Its value is:", c: [ "Zero", "The value of the vanilla call", "Half the value of the vanilla call", "The value of the corresponding up-and-in call less the vanilla call" ] },
+    { s: "An average price call is cheaper than the corresponding vanilla call because:", c: [ "The average of prices over a period varies less than the price on one date", "It cannot be exercised early", "Its payoff is capped", "It is traded over the counter" ] },
+    { s: "A floating lookback call, which pays the final price less the minimum price, is expensive because:", c: [ "It is always exercised and buys at the lowest price of the period", "It can be exercised at any time", "Its payoff is discontinuous", "It is knocked in only when the price falls" ] },
+    { s: "Treating a barrier option that is observed once a day as if it were monitored continuously will:", c: [ "Undervalue a knock-out option and overvalue a knock-in option", "Overvalue a knock-out option and undervalue a knock-in option", "Have no effect on its value", "Undervalue both knock-out and knock-in options" ] },
+    { s: "A dealer that has sold an up-and-out call finds it hardest to hedge when:", c: [ "The share price is near the barrier and expiration is near", "The share price is far below the strike", "The option has a long time to expiration", "Volatility is low" ] },
+    { s: "A reverse convertible note, which pays a high coupon but may repay the principal in shares, is equivalent to:", c: [ "A bond and a short position in a put option", "A bond and a long position in a call option", "A bond and a long position in a put option", "A zero-coupon bond and a binary call" ] }
+  ]); },
+  /* Q8 — lessons from derivatives losses */
+  function () { return poolQ([
+    { s: "Nick Leeson concealed his losses at Barings chiefly because:", c: [ "He controlled both the trading desk and the settlement of its trades", "The bank's value at risk model was incorrect", "Exchange margin requirements were too low", "He traded only over-the-counter options" ] },
+    { s: "Metallgesellschaft's hedge of long-term oil supply contracts with short-term futures failed principally because of:", c: [ "The cash required to meet margin calls on the futures, while gains on the contracts arrived only over many years", "A rise in oil prices", "The default of a counterparty", "An error in the pricing model for the supply contracts" ] },
+    { s: "The losses suffered by banks on the collapse of Archegos Capital in 2021 arose from:", c: [ "Concentrated share positions held through total return swaps with several banks, none of which knew their total size", "Credit default swaps on mortgage tranches", "Unauthorized trading by an employee of one bank", "Leveraged interest rate swaps sold to a local government" ] },
+    { s: "The lesson most directly illustrated by the losses of Orange County in 1994 is that:", c: [ "A hedger must not become a speculator, and the treasury should not be run as a profit center", "Front and back offices must be separated", "Barrier options must be valued with discrete monitoring", "Default correlation must be estimated conservatively" ] },
+    { s: "A bank should be conservative in recognizing day-one profits on complex trades because:", c: [ "A trade that appears profitable when valued by a model may simply be mispriced by the model", "Accounting rules forbid recognizing any profit until maturity", "Clients may cancel the trades", "Such trades carry no market risk" ] },
+    { s: "Long-Term Capital Management lost most of its capital in 1998 chiefly because:", c: [ "Highly leveraged convergence trades lost together when a flight to quality widened spreads across markets", "A trader concealed losses in an error account", "It sold protection on senior CDO tranches", "It hedged long-term contracts with short-term futures" ] }
+  ]); }
+];
 
 var CURRENT_QUIZ = {};
 
@@ -8308,7 +9211,9 @@ var CHAPTER_ARENAS = {
   "ch13": { file: "pricing-desk.html", label: "Pricing Desk" },
   "ch14": { file: "delta-hedge.html", label: "Delta-Hedging Simulator" },
   "ch15": { file: "vol-surface.html", label: "Vol Surface Lab" },
-  "ch16": { file: "monte-carlo-lab.html", label: "Monte Carlo Lab" }
+  "ch16": { file: "monte-carlo-lab.html", label: "Monte Carlo Lab" },
+  "ch17": { file: "credit-desk.html", label: "Credit Desk" },
+  "ch18": { file: "risk-desk.html", label: "Risk Desk" }
 };
 
 function injectArenaLinks() {

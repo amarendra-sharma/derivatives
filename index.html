@@ -634,7 +634,9 @@ var CHAPTERS = [
   {n:13,title:'Options on Indices, Currencies, and Futures'},
   {n:14,title:'The Greeks and Dynamic Hedging'},
   {n:15,title:'Volatility Smiles and the Volatility Surface'},
-  {n:16,title:'Numerical Methods: Trees, Simulation, and Finite Differences'}
+  {n:16,title:'Numerical Methods: Trees, Simulation, and Finite Differences'},
+  {n:17,title:'Credit Derivatives and Counterparty Risk'},
+  {n:18,title:'Exotic Options, Structured Products, and Lessons from Derivatives Losses'}
 ];
 
 // Number of chapters the course is graded over. Reading, quizzes and the
@@ -660,7 +662,9 @@ var STUDENT_CHAPTERS = [
   {n:13,title:'Options on Indices, Currencies, and Futures',mins:50,slug:'pricing-desk'},
   {n:14,title:'The Greeks and Dynamic Hedging',mins:55,slug:'delta-hedge'},
   {n:15,title:'Volatility Smiles and the Volatility Surface',mins:50,slug:'vol-surface'},
-  {n:16,title:'Numerical Methods: Trees, Simulation, and Finite Differences',mins:55,slug:'monte-carlo-lab'}
+  {n:16,title:'Numerical Methods: Trees, Simulation, and Finite Differences',mins:55,slug:'monte-carlo-lab'},
+  {n:17,title:'Credit Derivatives and Counterparty Risk',mins:40,slug:'credit-desk'},
+  {n:18,title:'Exotic Options, Structured Products, and Lessons from Derivatives Losses',mins:40,slug:'risk-desk'}
 ];
 /* Chapters 19-26 of the textbook. They are NOT part of STUDENT_CHAPTERS and not
    part of N_CHAPTERS, so nothing here touches a grade denominator, a quiz
@@ -683,12 +687,14 @@ var ARENA_FILE = {
   'pricing-desk':'pricing-desk.html',
   'delta-hedge':'delta-hedge.html',
   'vol-surface':'vol-surface.html',
-  'monte-carlo-lab':'monte-carlo-lab.html'
+  'monte-carlo-lab':'monte-carlo-lab.html',
+  'credit-desk':'credit-desk.html',
+  'risk-desk':'risk-desk.html'
 };
 // Canonical list of graded arenas (the denominator for the arena grade component).
 // Unplayed arenas contribute 0, so partial completion earns partial credit.
 // These slugs must match fd_arena_config.arena_slug exactly.
-var ARENA_SLUGS = ['payoff-lab', 'margin-desk', 'rates-desk', 'carry-desk', 'hedge-desk', 'swap-desk', 'bounds-parity', 'strategy-architect', 'tree-builder', 'path-lab', 'pricing-desk', 'delta-hedge', 'vol-surface', 'monte-carlo-lab'];
+var ARENA_SLUGS = ['payoff-lab', 'margin-desk', 'rates-desk', 'carry-desk', 'hedge-desk', 'swap-desk', 'bounds-parity', 'strategy-architect', 'tree-builder', 'path-lab', 'pricing-desk', 'delta-hedge', 'vol-surface', 'monte-carlo-lab', 'credit-desk', 'risk-desk'];
 var ARENA_MAX_ATTEMPTS = 2;   // only the first N attempts per arena count toward the grade
 
 // Performance-based arena score for the grade. Given all of a student's arena
@@ -825,7 +831,9 @@ var ARENA_TITLE = {
   'pricing-desk':'Pricing Desk',
   'delta-hedge':'Delta-Hedging Simulator',
   'vol-surface':'Vol Surface Lab',
-  'monte-carlo-lab':'Monte Carlo Lab'
+  'monte-carlo-lab':'Monte Carlo Lab',
+  'credit-desk':'Credit Desk',
+  'risk-desk':'Risk Desk'
 };
 var State = { user:null, profile:null, role:'student', courses:[], currentCourseId:null, settings:null, signup:false, selfCourseId:null, payCourseId:null, hasAccess:false, currentItem:null, selectedOption:null };
 
