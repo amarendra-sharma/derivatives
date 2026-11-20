@@ -23,6 +23,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 import "./fd-generators.js";
 import "./fd-payoff-model.js";   // Payoff Lab cases, rebuilt from the seed and re-graded here
+import "./fd-arenas.ts";         // every later arena (generated list of fd-arena-<slug>.js imports)
 
 type Built = {
   id: string;
@@ -157,11 +158,14 @@ Deno.serve(async (req: Request) => {
   // server rebuilds the same thirteen cases from that seed with the same file
   // the page used (fd-payoff-model.js), grades every answer itself, and assigns
   // the attempt number. A score typed into the browser console changes nothing.
-  if (p.mode === "payoff") {
+  // ARENA mode is the same contract for every later arena: each has its own model file
+  // (fd-arena-<slug>.js), registered in globalThis.FDArenas by slug.
+  if (p.mode === "payoff" || p.mode === "arena") {
     // deno-lint-ignore no-explicit-any
-    const PO = (globalThis as any).FDPayoff;
-    if (!PO || typeof PO.gradeRun !== "function") return json({ error: "Payoff Lab model failed to load on the server" }, 500);
-    if (p.arena_slug !== PO.SLUG) return json({ error: "mode payoff is only for " + PO.SLUG }, 400);
+    const G = globalThis as any;
+    const PO = p.mode === "payoff" ? G.FDPayoff : (G.FDArenas ? G.FDArenas[p.arena_slug] : null);
+    if (!PO || typeof PO.gradeRun !== "function") return json({ error: "no arena model for " + p.arena_slug + " on the server" }, p.mode === "arena" ? 400 : 500);
+    if (p.arena_slug !== PO.SLUG) return json({ error: "mode " + p.mode + " is not for " + p.arena_slug }, 400);
     if (typeof p.seed !== "number" || !Array.isArray(p.payoff_answers ?? p.answers)) {
       return json({ error: "seed and answers are required" }, 400);
     }

@@ -646,11 +646,11 @@ var N_CHAPTERS = CHAPTERS.length;
 
 var STUDENT_CHAPTERS = [
   {n:1,title:'Derivative Markets and Instruments',mins:45,slug:'payoff-lab'},
-  {n:2,title:'Mechanics of Futures and Forward Markets',mins:50,slug:''},
-  {n:3,title:'Interest Rates, Discounting, and Forward Rates',mins:50,slug:''},
-  {n:4,title:'Pricing Forwards and Futures',mins:50,slug:''},
-  {n:5,title:'Hedging with Futures',mins:50,slug:''},
-  {n:6,title:'Interest Rate Futures and Forward Rate Agreements',mins:50,slug:''},
+  {n:2,title:'Mechanics of Futures and Forward Markets',mins:50,slug:'margin-desk'},
+  {n:3,title:'Interest Rates, Discounting, and Forward Rates',mins:50,slug:'rates-desk'},
+  {n:4,title:'Pricing Forwards and Futures',mins:50,slug:'carry-desk'},
+  {n:5,title:'Hedging with Futures',mins:50,slug:'hedge-desk'},
+  {n:6,title:'Interest Rate Futures and Forward Rate Agreements',mins:50,slug:'rates-desk'},
   {n:7,title:'Swaps',mins:50,slug:''},
   {n:8,title:'Option Markets and the Properties of Option Prices',mins:50,slug:''},
   {n:9,title:'Trading Strategies with Options',mins:50,slug:''},
@@ -670,12 +670,16 @@ var STUDENT_CHAPTERS = [
 /* Chapters 17-18 (credit derivatives; exotics and structured products) are in preparation. */
 var FURTHER_CHAPTERS = [];
 var ARENA_FILE = {
-  'payoff-lab':'payoff-lab.html'
+  'payoff-lab':'payoff-lab.html',
+  'margin-desk':'margin-desk.html',
+  'rates-desk':'rates-desk.html',
+  'carry-desk':'carry-desk.html',
+  'hedge-desk':'hedge-desk.html'
 };
 // Canonical list of graded arenas (the denominator for the arena grade component).
 // Unplayed arenas contribute 0, so partial completion earns partial credit.
 // These slugs must match fd_arena_config.arena_slug exactly.
-var ARENA_SLUGS = ['payoff-lab'];
+var ARENA_SLUGS = ['payoff-lab', 'margin-desk', 'rates-desk', 'carry-desk', 'hedge-desk'];
 var ARENA_MAX_ATTEMPTS = 2;   // only the first N attempts per arena count toward the grade
 
 // Performance-based arena score for the grade. Given all of a student's arena
@@ -799,7 +803,11 @@ function computeArenaScore(rows){
   return sum / ARENA_SLUGS.length;
 }
 var ARENA_TITLE = {
-  'payoff-lab':'Payoff Lab'
+  'payoff-lab':'Payoff Lab',
+  'margin-desk':'Margin Desk',
+  'rates-desk':'Rates Desk',
+  'carry-desk':'Carry Arbitrage Desk',
+  'hedge-desk':'Hedge Desk'
 };
 var State = { user:null, profile:null, role:'student', courses:[], currentCourseId:null, settings:null, signup:false, selfCourseId:null, payCourseId:null, hasAccess:false, currentItem:null, selectedOption:null };
 

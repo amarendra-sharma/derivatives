@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache">
+<title>Rates Desk · Financial Derivatives</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="fd-backend.js?v=fd1"></script>
+<script src="fd-progress.js?v=fd1"></script>
+<style>
+:root { --ink:#0f172a; --ink-light:#334155; --ink-muted:#64748b; --ink-faint:#94a3b8; --bg:#fafaf9; --bg-warm:#f5f0e8; --bg-card:#fff; --rule:#e2e8f0;
+  --accent:#0f3d9e; --accent-mid:#1e56c0; --accent-lt:#dbeafe; --gold:#b87408; --gold-lt:#fef3c7; --green:#166534; --green-lt:#dcfce7; --red:#991b1b; --red-lt:#fee2e2;
+  --serif:'Lora',Georgia,serif; --sans:'Inter',system-ui,sans-serif; --mono:'JetBrains Mono',monospace; --radius:8px; }
+* { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:var(--sans); background:var(--bg); color:var(--ink); line-height:1.6; }
+header { background:var(--ink); color:#fff; padding:0.875rem 1.5rem; display:flex; align-items:center; gap:1rem; flex-wrap:wrap; }
+header h1 { font-family:var(--serif); font-size:1.125rem; font-weight:600; flex:1; }
+header h1 span { color:#93c5fd; }
+header a { color:#fff; font-size:0.8125rem; font-weight:600; text-decoration:none; background:rgba(255,255,255,0.12); padding:0.375rem 0.875rem; border-radius:18px; }
+main { max-width:900px; margin:0 auto; padding:1.5rem 1.25rem 4rem; }
+.pl-mode { font-size:0.8125rem; padding:0.5rem 0.875rem; border-radius:var(--radius); margin-bottom:1rem; background:var(--gold-lt); color:#5b3b05; border:1px solid #f1d58a; }
+.pl-mode.live { background:var(--green-lt); color:var(--green); border-color:#bbf7d0; }
+.card { background:var(--bg-card); border:1px solid var(--rule); border-radius:var(--radius); padding:1.5rem; margin-bottom:1.25rem; box-shadow:0 1px 3px rgba(0,0,0,0.07); }
+.card h2 { font-family:var(--serif); font-size:1.375rem; margin-bottom:0.5rem; }
+.card h3 { font-size:1rem; margin:0.75rem 0 0.375rem; }
+p { font-size:0.9375rem; color:var(--ink-light); margin-bottom:0.75rem; }
+ul.rules { margin:0 0 1rem 1.25rem; font-size:0.9rem; color:var(--ink-light); }
+ul.rules li { margin-bottom:0.3rem; }
+.eyebrow { font-size:0.75rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--accent); margin-bottom:0.375rem; }
+.bar { display:flex; gap:0.75rem; flex-wrap:wrap; margin-bottom:1rem; }
+.stat { flex:1; min-width:120px; background:var(--bg-warm); border-radius:var(--radius); padding:0.625rem 0.875rem; }
+.stat b { display:block; font-family:var(--serif); font-size:1.25rem; color:var(--accent); }
+.stat span { font-size:0.75rem; color:var(--ink-muted); }
+.prog { height:6px; background:var(--rule); border-radius:3px; margin-bottom:1rem; overflow:hidden; }
+.prog div { height:100%; background:var(--accent); width:0; }
+.btn { font-family:inherit; padding:0.5625rem 1.25rem; border:none; border-radius:var(--radius); font-size:0.9rem; font-weight:600; cursor:pointer; background:var(--accent); color:#fff; }
+.btn:hover { background:var(--accent-mid); }
+.btn:disabled { background:var(--ink-faint); cursor:not-allowed; }
+.btn.ghost { background:transparent; color:var(--ink-light); border:1.5px solid var(--rule); }
+.btn.ghost:hover { border-color:var(--accent); color:var(--accent); }
+.btn.ghost.on { background:var(--accent-lt); border-color:var(--accent); color:var(--accent); }
+.opts { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:0.5rem; margin:0.75rem 0; }
+.row { display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap; margin:0.625rem 0; }
+.row label { font-size:0.875rem; font-weight:600; color:var(--ink-light); min-width:240px; flex:1; }
+.row input[type=text] { font-family:var(--mono); font-size:0.95rem; padding:0.5rem 0.75rem; border:1.5px solid var(--rule); border-radius:var(--radius); width:180px; }
+.row input[type=text]:focus { outline:3px solid #38BDF8; border-color:var(--accent); }
+.teach { background:#f0f9ff; border:1px solid #bae6fd; border-left:4px solid #0284c7; border-radius:0 var(--radius) var(--radius) 0; padding:0.875rem 1.125rem; margin-bottom:1rem; }
+.teach p { font-size:0.875rem; color:#0c4a6e; margin:0; }
+.fb { border-radius:var(--radius); padding:0.875rem 1.125rem; margin-top:1rem; font-size:0.9rem; }
+.fb.good { background:var(--green-lt); color:#14532d; border:1px solid #bbf7d0; }
+.fb.part { background:var(--gold-lt); color:#5b3b05; border:1px solid #f1d58a; }
+.fb.bad { background:var(--red-lt); color:#5c1a1a; border:1px solid #fecaca; }
+.fb b { display:block; margin-bottom:0.25rem; }
+.svgbox { background:#fff; border:1px solid var(--rule); border-radius:var(--radius); padding:0.5rem; margin:0.75rem 0; overflow-x:auto; }
+svg text { font-family:Inter,Arial,sans-serif; }
+table { width:100%; border-collapse:collapse; font-size:0.875rem; margin:0.75rem 0; }
+th, td { border:1px solid var(--rule); padding:0.4375rem 0.625rem; text-align:left; vertical-align:top; }
+thead th { background:var(--ink); color:#fff; }
+td.num, th.num { text-align:right; font-family:var(--mono); }
+.big { font-family:var(--serif); font-size:2.5rem; font-weight:700; color:var(--accent); }
+.pass { color:var(--green); } .fail { color:var(--red); }
+:focus-visible { outline:3px solid #38BDF8; outline-offset:2px; }
+footer { text-align:center; font-size:0.75rem; color:var(--ink-faint); padding:1.5rem; }
+@media (prefers-reduced-motion: reduce) { * { transition:none !important; animation:none !important; } }
+</style>
+<style>
+.opts{display:flex;flex-wrap:wrap;gap:0.5rem;margin:0.25rem 0 0.75rem}
+select.sel{font:inherit;padding:0.45rem 0.6rem;border:1px solid #94a3b8;border-radius:6px;background:#fff}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));gap:0.25rem 1.25rem}
+.note{font-size:0.85rem;color:var(--ink-light)}
+.svgbox{margin:0.75rem 0}
+</style>
+</head>
+<body>
+<!-- build: fin-derivatives-arena-rates-desk-2026-11 -->
+<header>
+  <h1><span>Rates</span> Desk</h1>
+  <a href="derivatives-textbook.html#ch3">&larr; Textbook, Chapters 3 and 6</a>
+  <a href="index.html">Portal</a>
+</header>
+<main id="main">
+  <div class="pl-mode" id="pl-mode" role="status"></div>
+  <div id="stage" aria-live="polite"></div>
+</main>
+<footer>Rates Desk &middot; companion arena to Chapters 3 and 6 of <em>Financial Derivatives</em> by Amarendra Sharma, PhD &middot; MacroNations Press &middot; &copy; 2026</footer>
+<script src="fd-arena-rates-desk.js?v=1"></script>
+<script src="fd-arena-ui.js?v=1"></script>
+</body>
+</html>
