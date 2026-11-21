@@ -365,6 +365,10 @@
     </div>
     <button class="btn btn-primary" id="authSubmit" style="width:100%;">Sign in</button>
     <div class="auth-toggle" id="authToggle">No account yet? <b>Create one</b></div>
+    <a href="self-study.html" id="ssPromo" style="display:block;margin-top:16px;padding:12px 14px;border:1px solid rgba(155,123,255,.35);border-radius:10px;background:rgba(124,92,255,.08);text-decoration:none;">
+      <div style="font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:var(--violet);font-family:'JetBrains Mono',monospace;">New · Self-study with Asha</div>
+      <div style="font-size:13px;color:var(--text);margin-top:3px;">The full course on your schedule: live classes, quizzes, arenas, proctored exams and a MacroNations certificate. <b style="color:var(--violet);">See what&rsquo;s included &rarr;</b></div>
+    </a>
     <div style="text-align:center;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
       <div style="font-size:12.5px;color:var(--text-muted);margin-bottom:8px;">Just want to look around?</div>
       <button class="btn btn-ghost btn-sm" id="guestBrowseBtn">Browse free chapters &amp; arenas &mdash; no account needed</button>
@@ -1084,6 +1088,15 @@ function hide(el){ if(el){el.classList.add('hidden');} }
    ==================================================================== */
 function setAuthMsg(t,k){ var m=$('authMsg'); m.textContent=t||''; m.className='msg '+(k?k:''); if(!t){m.className='msg';} }
 $('authToggle').addEventListener('click', function(){ State.signup=!State.signup; $('authSubmit').textContent=State.signup?'Create account':'Sign in'; $('authToggle').innerHTML=State.signup?'Already registered? <b>Sign in</b>':'No account yet? <b>Create one</b>'; setAuthMsg('',''); if(State.signup){ show($('signupRole')); } else { hide($('signupRole')); } });
+// Arriving from the self-study page (self-study.html): open in sign-up mode.
+(function(){
+  var q = null; try { q = new URLSearchParams(window.location.search).get('selfstudy'); } catch (e) {}
+  if (q !== '1') { return; }
+  State.wantSelfStudy = true;
+  if (!State.signup) { $('authToggle').click(); }
+  setAuthMsg('Create your student account (leave the join code blank). Your Home page will then walk you through paying and choosing your schedule. Already registered? Sign in below.', 'ok');
+  var p = $('ssPromo'); if (p) { p.style.display = 'none'; }
+})();
 $('authSubmit').addEventListener('click', doAuth);
 if($('guestBrowseBtn')){ $('guestBrowseBtn').addEventListener('click', function(){
   enterGuest();
@@ -7265,7 +7278,7 @@ function renderPlatform(host){
     '<div class="row2"><div class="field"><label>Price per student / course</label><input id="pfPrice" type="number" min="0" step="0.01" value="'+((s.price_cents?s.price_cents:0)/100).toFixed(2)+'"></div>'+
     '<div class="field"><label>Currency</label><input id="pfCur" value="'+esc(s.currency||'usd')+'"></div></div>'+
     '<div class="field"><label>Stripe payment link</label><input id="pfStripe" value="'+esc(s.stripe_link||'')+'" placeholder="https://buy.stripe.com/..."></div>'+
-    '<div class="field"><label>Notify email (where new professor requests are sent)</label><input id="pfNotify" value="'+esc(s.notify_email||'')+'" placeholder="you@macronations.com"></div>'+
+    '<div class="field"><label>Notify email (where new professor requests are sent)</label><input id="pfNotify" value="" placeholder="you@macronations.com"></div>'+
     '<button class="btn btn-primary" id="pfSavePricing">Save pricing</button></div>'+
     '<div class="card" style="max-width:680px;margin-bottom:18px;"><h3>Self-study course</h3>'+
     '<div style="font-size:12.5px;color:var(--text-muted);margin-bottom:12px;">When on, any student can buy the self-study course: after paying, the student chooses the course length and the live-class schedule, and Asha teaches a private section on that schedule, fully automatically. Only the administrator can see these sections; professors never get them. Turning this off stops new self-study sign-ups; students already enrolled continue.</div>'+
@@ -7280,7 +7293,13 @@ function renderPlatform(host){
     '<button class="btn btn-primary" id="pfSaveBio">Save bio</button></div>';
   $('pfSavePricing').addEventListener('click', function(){
     var cents=Math.round(parseFloat($('pfPrice').value||'0')*100);
-    savePlatform({ price_cents:cents, currency:$('pfCur').value.trim()||'usd', stripe_link:$('pfStripe').value.trim(), notify_email:$('pfNotify').value.trim() }, 'Pricing saved.');
+    // The notify email lives in the admin-only fd_platform_private table, not in the
+    // publicly readable settings row.
+    sb.from('fd_platform_private').upsert({ id:1, notify_email:$('pfNotify').value.trim()||null, updated_at:new Date().toISOString(), updated_by:State.user.id }, {onConflict:'id'}).then(function(){});
+    savePlatform({ price_cents:cents, currency:$('pfCur').value.trim()||'usd', stripe_link:$('pfStripe').value.trim() }, 'Pricing saved.');
+  });
+  sb.from('fd_platform_private').select('notify_email').eq('id',1).maybeSingle().then(function(r){
+    if(r && r.data && r.data.notify_email && $('pfNotify') && !$('pfNotify').value){ $('pfNotify').value = r.data.notify_email; }
   });
   $('pfSaveBio').addEventListener('click', function(){
     savePlatform({ author_name:$('pfName').value.trim(), author_subtitle:$('pfSub').value.trim(), author_photo_url:$('pfPhoto').value.trim(), author_bio_html:$('pfBio').value.trim() }, 'Bio saved.');
@@ -7949,8 +7968,8 @@ function renderSelfStudyCard(host, st){
   if(st.status === 'none'){
     if(!st.enabled || State.selfCourseId){ host.innerHTML = ''; return; }   // already in a professor's course
     host.innerHTML = head + '<div class="c-eyebrow">Self-study</div><h3 style="margin:4px 0 8px;">Take the whole course with Asha, your AI professor</h3>' +
-      '<p style="color:var(--text-muted);font-size:14px;margin:0 0 12px;">You choose how many weeks the course lasts and when your live classes meet. Asha then teaches every chapter in live classes on your schedule, sets your quiz and arena deadlines, runs the midterm and final, grades your work, and answers questions at any hour. All 18 chapters and 16 arenas are included' + (price ? ', for ' + esc(price) : '') + '.</p>' +
-      '<button class="btn btn-primary" id="ssStart">Start self-study</button> <span id="ssMsg" class="msg" style="display:inline-block;margin-left:8px;"></span></div>';
+      '<p style="color:var(--text-muted);font-size:14px;margin:0 0 12px;">You choose how many weeks the course lasts and when your live classes meet. Asha then teaches every chapter in live classes on your schedule, sets your quiz and arena deadlines, runs the midterm and final, grades your work, and answers questions at any hour. All 18 chapters and 16 arenas are included, with proctored quizzes and exams and a MacroNations certificate when you finish' + (price ? ', for ' + esc(price) : '') + '.</p>' +
+      '<button class="btn btn-primary" id="ssStart">Start self-study</button> <a class="btn btn-ghost" href="self-study.html" target="_blank" rel="noopener">See everything included</a> <span id="ssMsg" class="msg" style="display:inline-block;margin-left:8px;"></span></div>';
     $('ssStart').addEventListener('click', function(){
       $('ssStart').disabled = true;
       sb.rpc('fd_selfstudy_start').then(function(r){
@@ -7965,7 +7984,7 @@ function renderSelfStudyCard(host, st){
     var link = ssPayLink(st);
     if(!State.settings || !State.settings.stripe_link){ loadPlatformSettings().then(function(){ renderSelfStudyCard(host, st); }); }
     host.innerHTML = head + '<div class="c-eyebrow">Self-study · step 1 of 2</div><h3 style="margin:4px 0 8px;">Pay the course fee</h3>' +
-      '<p style="color:var(--text-muted);font-size:14px;margin:0 0 12px;">After payment you will choose your course length and your live-class times. Payments are confirmed automatically, usually within an hour.</p>' +
+      '<p style="color:var(--text-muted);font-size:14px;margin:0 0 12px;">After payment you will choose your course length and your live-class times. Payments are confirmed automatically, usually within an hour. <a href="self-study.html" target="_blank" rel="noopener" style="color:var(--violet);">What&rsquo;s included</a></p>' +
       (link ? '<a class="btn btn-primary" href="' + esc(link) + '" target="_blank" rel="noopener">Pay ' + esc(price || 'now') + '</a> ' : '<div class="msg err" style="display:block;">The payment link is not configured yet.</div>') +
       '<button class="btn btn-ghost" id="ssCheck">I have paid — check now</button> <span id="ssMsg" class="msg" style="display:inline-block;margin-left:8px;"></span></div>';
     $('ssCheck').addEventListener('click', function(){
@@ -10963,7 +10982,7 @@ function loadCompletion() {
   if (!courseId) { host.innerHTML = ''; return; }
 
   capstoneSync(courseId).then(function(){ return Promise.all([
-    sb.from('fd_course').select('id,title,owner_id,weight_reading,weight_quizzes,weight_arenas,weight_midterm,weight_final,weight_attendance,weight_capstone,att_presence_share').eq('id', courseId).maybeSingle(),
+    sb.from('fd_course').select('id,title,owner_id,is_self_study,weight_reading,weight_quizzes,weight_arenas,weight_midterm,weight_final,weight_attendance,weight_capstone,att_presence_share').eq('id', courseId).maybeSingle(),
     sb.from('fd_chapter_progress').select('chapter,reading_done,quiz_passed,quiz_score').eq('student_id', uid).eq('course_id', courseId),
     sb.from('fd_attempt').select('arena_slug,is_correct,score_pct,attempt_no,created_at').eq('user_id', uid).or('course_id.eq.'+courseId+',course_id.is.null'),
     sb.from('fd_exam').select('id,kind,title,total_points,item_ids,weight,attempt_scoring,is_manual').eq('course_id', courseId).eq('is_published', true),
@@ -11112,7 +11131,9 @@ function getStudentName(cb) {
 
 function openCertificate(course, pct, isProfCourse) {
   getStudentName(function(name) {
-    if (isProfCourse && course.owner_id) {
+    if (course.is_self_study) {
+      launchCertificate({ name:name, pct:pct, mode:'selfstudy', courseTitle:'Financial Derivatives', professor:'Asha' });
+    } else if (isProfCourse && course.owner_id) {
       sb.from('fd_person').select('full_name,display_title').eq('user_id', course.owner_id).maybeSingle().then(function(res) {
         var prof = (res.data && res.data.full_name) ? res.data.full_name : 'Course Instructor';
         launchCertificate({ name:name, pct:pct, mode:'enrolled', courseTitle:course.title, professor:prof });
@@ -11160,9 +11181,10 @@ function crestSVG() {
 
 function buildCertificateHTML(o) {
   var year = new Date().getFullYear();
-  var subtitle = (o.mode === 'enrolled') ? o.courseTitle : 'Independent Study';
+  var subtitle = (o.mode === 'enrolled') ? o.courseTitle : (o.mode === 'selfstudy' ? 'Self-Study with Proctored Examinations' : 'Independent Study');
   var leftName, leftRole;
   if (o.mode === 'enrolled') { leftName = o.professor; leftRole = 'COURSE INSTRUCTOR'; }
+  else if (o.mode === 'selfstudy') { leftName = 'Asha'; leftRole = 'AI PROFESSOR \u00b7 MACRONATIONS'; }
   else { leftName = 'Amarendra Sharma, Ph.D.'; leftRole = 'FOUNDER \u00b7 MACRONATIONS'; }
   var body = 'has completed the Financial Derivatives course, demonstrating command of the pricing of forwards, futures and swaps, the use of futures for hedging, the properties and trading strategies of options, the binomial and Black\u2013Scholes\u2013Merton models, and the measurement and management of option risk through the Greeks, volatility surfaces and numerical methods.';
 
