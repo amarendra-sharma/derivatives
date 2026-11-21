@@ -9044,7 +9044,7 @@ QUIZ_GENERATORS.ch18 = [
   function () {
     var Q = pick([100, 500, 1000]), n2 = pick([0.38, 0.45, 0.51, 0.56, 0.62]), r = pick([0.03, 0.04, 0.05]), T = pick([0.5, 1, 2]);
     var ans = Q * Math.exp(-r * T) * n2;
-    return { prompt: "A cash-or-nothing call pays $" + Q + " if the share price exceeds the strike at expiration in " + (T === 0.5 ? "six months" : T === 1 ? "one year" : "two years") + ". The risk-free rate is " + (r * 100).toFixed(0) + " percent with continuous compounding, and N(d<sub>2</sub>) = " + n2.toFixed(2) + ". The value of the option is:", choices: strChoices(ans, [Q * n2, Q * Math.exp(-r * T) * (1 - n2), Q * Math.exp(-r * T), Q * n2 * Math.exp(r * T)], fmtPx2), correct: 0 };
+    return { prompt: "A cash-or-nothing call pays $" + Q + " if the share price exceeds the strike at expiration in " + (T === 0.5 ? "six months" : T === 1 ? "one year" : "two years") + ". The risk-free rate is " + (r * 100).toFixed(0) + " percent with continuous compounding, and N(d₂) = " + n2.toFixed(2) + ". The value of the option is:", choices: strChoices(ans, [Q * n2, Q * Math.exp(-r * T) * (1 - n2), Q * Math.exp(-r * T), Q * n2 * Math.exp(r * T)], fmtPx2), correct: 0 };
   },
   /* Q3 — decomposition of a vanilla call */
   function () {

@@ -559,7 +559,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="mn-proctor.js?v=fd1"></script>
 <script src="fd-diagrams.js?v=fd1"></script>
-<script src="fd-generators.js?v=fd1"></script>
+<script src="fd-generators.js?v=fd2"></script>
 <script src="fd-quiz.js?v=fd1"></script>
 <script src="fd-backend.js?v=fd1"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
@@ -4543,7 +4543,7 @@ function openAttBuilder(){
 function attFillBank(){
   var ch=$('attCh').value; var host=$('attBank');
   host.style.display='block'; host.innerHTML='<div style="padding:8px;color:var(--text-muted);">Loading\u2026</div>';
-  var q=sb.from('fd_assessment_item').select('id,chapter,concept_tag,difficulty,item_type,points,prompt').eq('is_active',true).order('id');
+  var q=sb.from('fd_assessment_item').select('id,chapter,concept_tag,difficulty,item_type,points,prompt,generator_id').eq('is_active',true).order('id');
   if(ch){ q=q.eq('chapter',parseInt(ch,10)); }
   q.then(function(res){
     var items=res.data?res.data:[];
@@ -6408,7 +6408,7 @@ function loadPendingWritten(){
       var examAttempts=raw.filter(function(a){ return a.exam_id; });
       if(examAttempts.length===0){ gSecNote('gradingBody',0); body.innerHTML='<div class="card empty">No ungraded exam answers in this course yet. (If a student just submitted, give it a moment, then reopen this tab.)</div>'; return; }
       var itemIds=[]; examAttempts.forEach(function(a){ if(itemIds.indexOf(a.item_id)<0){ itemIds.push(a.item_id); } });
-      sb.from('fd_assessment_item').select('id,prompt,points,item_type').in('id',itemIds).then(function(it){
+      sb.from('fd_assessment_item').select('id,prompt,points,item_type,generator_id').in('id',itemIds).then(function(it){
         var items=it.data?it.data:[];
         var itemById={}; items.forEach(function(x){ itemById[x.id]=x; });
         // keep only free_response attempts
@@ -6601,7 +6601,7 @@ function openExamEditor(examId){
     EX=res.data; EDIT_IDS=(EX.item_ids||[]).slice();
     // fetch the items currently in the exam (to show questions)
     if(EDIT_IDS.length===0){ renderEditor({}); return; }
-    sb.from('fd_assessment_item').select('id,chapter,concept_tag,difficulty,item_type,points,prompt,options').in('id',EDIT_IDS).then(function(r2){
+    sb.from('fd_assessment_item').select('id,chapter,concept_tag,difficulty,item_type,points,prompt,options,generator_id').in('id',EDIT_IDS).then(function(r2){
       (r2.data||[]).forEach(function(it){ bank[it.id]=it; });
       renderEditor(bank);
     });
@@ -6708,7 +6708,7 @@ function openExamEditor(examId){
   }
   function fillBank(){
     var ch=$('edBankCh').value;
-    var q=sb.from('fd_assessment_item').select('id,chapter,concept_tag,difficulty,item_type,points,prompt,options').eq('is_active',true).order('id');
+    var q=sb.from('fd_assessment_item').select('id,chapter,concept_tag,difficulty,item_type,points,prompt,options,generator_id').eq('is_active',true).order('id');
     if(ch){ q=q.eq('chapter',parseInt(ch,10)); }
     q.then(function(res){
       var items=res.data?res.data:[];
@@ -6870,7 +6870,7 @@ function openAssembler(){
   loadBank();
 
   function loadBank(){
-    var q=sb.from('fd_assessment_item').select('id,chapter,concept_tag,difficulty,item_type,points,prompt,options').eq('is_active',true).order('id');
+    var q=sb.from('fd_assessment_item').select('id,chapter,concept_tag,difficulty,item_type,points,prompt,options,generator_id').eq('is_active',true).order('id');
     var ch=$('axChapter').value; if(ch){ q=q.eq('chapter',parseInt(ch,10)); }
     var ty=$('axType')?$('axType').value:''; if(ty){ q=q.eq('item_type',ty); }
     $('axBank').innerHTML=loadingCard();
@@ -6916,7 +6916,7 @@ function openAssembler(){
       } else if(it.item_type==='free_response'){
         opt='<div style="margin-top:6px;font-size:12px;color:var(--amber);">Short answer · students type a written response · graded by you (or AI-assisted)</div>';
       }
-      box.innerHTML='<div id="pvw_'+esc(id)+'" style="margin-top:8px;padding:10px;border-radius:8px;background:rgba(124,92,255,.08);border:1px solid rgba(124,92,255,.2);font-size:13px;color:var(--text);">'+esc(it.prompt)+opt+'<div style="margin-top:6px;font-size:12px;color:var(--text-subtle);">Loading sample\u2026</div></div>';
+      box.innerHTML='<div id="pvw_'+esc(id)+'" style="margin-top:8px;padding:10px;border-radius:8px;background:rgba(124,92,255,.08);border:1px solid rgba(124,92,255,.2);font-size:13px;color:var(--text);">'+esc(bankPrompt(it))+opt+'<div style="margin-top:6px;font-size:12px;color:var(--text-subtle);">Loading sample\u2026</div></div>';
       box.style.display='block';
       previewWithFigure(id, opt);
     } else { box.style.display='none'; }
@@ -6929,7 +6929,7 @@ function openAssembler(){
       var d=res.data, host=$('pvw_'+id), it0=bankCache[id];
       if(!host){ return; }
       if(!d || d.error){
-        host.innerHTML=esc(it0.prompt)+opt+'<div style="margin-top:6px;font-size:12px;color:var(--text-subtle);">(sample unavailable)</div>';
+        host.innerHTML=esc(bankPrompt(it0))+opt+'<div style="margin-top:6px;font-size:12px;color:var(--text-subtle);">(sample unavailable)</div>';
         return;
       }
       var optHtml=opt;
@@ -6942,7 +6942,7 @@ function openAssembler(){
         '<div style="margin-top:6px;font-size:11.5px;color:var(--text-subtle);">Sample values \u2014 each student receives a different version.</div>';
     }, function(){
       var host2=$('pvw_'+id), it1=bankCache[id];
-      if(host2){ host2.innerHTML=esc(it1.prompt)+opt+'<div style="margin-top:6px;font-size:12px;color:var(--text-subtle);">(sample unavailable)</div>'; }
+      if(host2){ host2.innerHTML=esc(bankPrompt(it1))+opt+'<div style="margin-top:6px;font-size:12px;color:var(--text-subtle);">(sample unavailable)</div>'; }
     });
   }
   function renderSelected(){
