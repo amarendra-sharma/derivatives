@@ -1754,7 +1754,40 @@ function renderMaterials(host){
   });
   loadMaterialsList();
 }
-function matIcon(kind){ return kind==='video'?'\uD83C\uDFA5':(kind==='slides'?'\uD83D\uDC3D':'\uD83D\uDD17'); }
+function matIcon(kind){ return kind==='syllabus'?'\uD83D\uDCC4':(kind==='video'?'\uD83C\uDFA5':(kind==='slides'?'\uD83D\uDCCA':'\uD83D\uDD17')); }
+/* A material that carries its own HTML body (the self-study syllabus Asha posts)
+   opens in a sandboxed viewer instead of linking out. */
+var MatBodies = {};
+function matLink(m, style){
+  if(m.body){
+    MatBodies[m.id] = { title:m.title, body:m.body };
+    return '<a href="#" data-matbody="'+esc(m.id)+'" style="'+style+'">'+esc(m.title)+'</a>';
+  }
+  return '<a href="'+esc(m.url)+'" target="_blank" rel="noopener" style="'+style+'">'+esc(m.title)+'</a>';
+}
+function wireMatBodies(host){
+  Array.prototype.forEach.call(host.querySelectorAll('[data-matbody]'), function(a){
+    a.addEventListener('click', function(ev){ ev.preventDefault(); openMatBody(a.getAttribute('data-matbody')); });
+  });
+}
+function openMatBody(id){
+  var m = MatBodies[id]; if(!m){ return; }
+  var css = '<style>body{font:14px/1.55 system-ui,-apple-system,Segoe UI,sans-serif;color:#1f2937;margin:22px;}h1{font-size:21px;margin:0 0 8px;}h2{font-size:16px;margin:22px 0 6px;color:#4c3aa8;}'+
+    'table{border-collapse:collapse;width:100%;font-size:13px;}th,td{border:1px solid #d6d3e6;padding:5px 8px;text-align:left;vertical-align:top;}th{background:#f3f0ff;}ul{padding-left:20px;}li{margin:3px 0;}'+
+    '@media print{body{margin:0;}h2{break-after:avoid;}tr{break-inside:avoid;}}</style>';
+  var bg = document.createElement('div'); bg.className = 'modal-bg';
+  bg.innerHTML = '<div class="modal" style="max-width:860px;width:94vw;">'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;"><h2 style="margin:0;">'+esc(m.title)+'</h2>'+
+    '<span class="inline-actions"><button class="btn btn-ghost btn-sm" id="matBodyPrint">Print / save as PDF</button><button class="btn btn-primary btn-sm" id="matBodyClose">Close</button></span></div>'+
+    '<iframe id="matBodyFrame" sandbox="allow-same-origin allow-modals" style="width:100%;height:70vh;border:1px solid var(--border);border-radius:8px;background:#fff;"></iframe></div>';
+  $('modalHost').appendChild(bg);
+  var fr = $('matBodyFrame');
+  fr.srcdoc = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+esc(m.title)+'</title>'+css+'</head><body>'+m.body+'</body></html>';
+  function close(){ if(bg.parentNode){ bg.parentNode.removeChild(bg); } }
+  $('matBodyClose').addEventListener('click', close);
+  bg.addEventListener('click', function(e){ if(e.target===bg){ close(); } });
+  $('matBodyPrint').addEventListener('click', function(){ try{ fr.contentWindow.focus(); fr.contentWindow.print(); }catch(e){} });
+}
 function loadMaterialsList(){
   sb.from('fd_material').select('*').eq('course_id',State.teachCourseId).order('position',{ascending:true}).order('created_at',{ascending:true}).then(function(r){
     var rows=r.data?r.data:[];
@@ -1763,8 +1796,8 @@ function loadMaterialsList(){
       '<p style="font-size:11.5px;color:var(--text-subtle);margin-bottom:10px;">Use \u2191 / \u2193 to set the order students see.</p>';
     rows.forEach(function(m,i){
       html+='<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">'+
-        '<div style="flex:1;"><span style="margin-right:6px;">'+matIcon(m.kind)+'</span><a href="'+esc(m.url)+'" target="_blank" rel="noopener" style="color:var(--violet);text-decoration:none;">'+esc(m.title)+'</a>'+
-        '<div style="font-size:11px;color:var(--text-subtle);margin-top:2px;">'+esc(m.url)+'</div></div>'+
+        '<div style="flex:1;"><span style="margin-right:6px;">'+matIcon(m.kind)+'</span>'+matLink(m,'color:var(--violet);text-decoration:none;')+
+        '<div style="font-size:11px;color:var(--text-subtle);margin-top:2px;">'+(m.body?'Posted by Asha \u00b7 opens in the viewer':esc(m.url))+'</div></div>'+
         '<span class="inline-actions">'+
           '<button class="btn btn-ghost btn-sm" data-mup="'+i+'"'+(i===0?' disabled aria-disabled="true"':'')+' aria-label="Move '+esc(m.title)+' up">\u2191</button>'+
           '<button class="btn btn-ghost btn-sm" data-mdown="'+i+'"'+(i===rows.length-1?' disabled aria-disabled="true"':'')+' aria-label="Move '+esc(m.title)+' down">\u2193</button>'+
@@ -1772,6 +1805,7 @@ function loadMaterialsList(){
     });
     html+='</div>';
     $('matList').innerHTML=html;
+    wireMatBodies($('matList'));
     Array.prototype.forEach.call($('matList').querySelectorAll('[data-delmat]'), function(b){ b.addEventListener('click', function(){
       if(!confirm('Remove this material?')){ return; }
       sb.from('fd_material').delete().eq('id',b.getAttribute('data-delmat')).then(loadMaterialsList);
@@ -7287,15 +7321,46 @@ function loadSelfStudyAdmin(){
           '<td>'+(x.next_at?esc(new Date(x.next_at).toLocaleString()):'—')+'</td><td>'+(x.ends_at?esc(new Date(x.ends_at).toLocaleDateString()):'—')+'</td>'+
           '<td style="white-space:nowrap;">'+(x.status==='awaiting_payment'?'<button class="btn btn-ghost btn-sm" data-sscomp="'+x.course_id+'">Comp (free)</button> ':'')+
           (x.status==='active'&&!x.held?'<button class="btn btn-ghost btn-sm" data-ssreset="'+x.course_id+'">Let student reschedule</button> ':'')+
+          (x.status==='active'||x.status==='completed'?'<button class="btn btn-ghost btn-sm" data-ssintg="'+x.course_id+'">Integrity</button> ':'')+
           '<button class="btn btn-ghost btn-sm" data-ssopen="'+x.course_id+'">Open</button></td></tr>';
       }).join('')+'</table>';
     Array.prototype.forEach.call(host.querySelectorAll('[data-sscomp]'), function(b){ b.addEventListener('click', function(){ sb.rpc('fd_selfstudy_admin_comp',{p_course:b.getAttribute('data-sscomp')}).then(loadSelfStudyAdmin); }); });
     Array.prototype.forEach.call(host.querySelectorAll('[data-ssreset]'), function(b){ b.addEventListener('click', function(){ sb.rpc('fd_selfstudy_admin_reset',{p_course:b.getAttribute('data-ssreset')}).then(loadSelfStudyAdmin); }); });
+    Array.prototype.forEach.call(host.querySelectorAll('[data-ssintg]'), function(b){ b.addEventListener('click', function(){ openSelfStudyIntegrity(b.getAttribute('data-ssintg')); }); });
     Array.prototype.forEach.call(host.querySelectorAll('[data-ssopen]'), function(b){ b.addEventListener('click', function(){
       State.ssOpenCourse=b.getAttribute('data-ssopen'); State.teachCourseId=State.ssOpenCourse;
       loadCourses().then(function(){ var sel=$('coursePick'); if(sel){ sel.value=State.ssOpenCourse; } switchView('gradebook'); });
     }); });
   }, function(){ host.textContent='Could not load self-study students.'; });
+}
+/* Integrity records for one self-study student: proctored midterm/final plus
+   every camera-proctored chapter quiz (exam_id 'quiz-ch<N>-<course>'). */
+function openSelfStudyIntegrity(courseId){
+  var bg=document.createElement('div'); bg.className='modal-bg';
+  bg.innerHTML='<div class="modal" style="max-width:760px;width:94vw;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;"><h2 style="margin:0;">Integrity log</h2><button class="btn btn-primary btn-sm" id="ssIntgClose">Close</button></div>'+
+    '<div id="ssIntgList">'+loadingCard()+'</div><div id="ssIntgBody" style="margin-top:12px;max-height:55vh;overflow:auto;"></div></div>';
+  $('modalHost').appendChild(bg);
+  function close(){ if(bg.parentNode){ bg.parentNode.removeChild(bg); } }
+  $('ssIntgClose').addEventListener('click', close);
+  bg.addEventListener('click', function(e){ if(e.target===bg){ close(); } });
+  Promise.all([
+    sb.from('fd_proctor_events').select('exam_id,violations,updated_at').eq('course_id',courseId).order('updated_at',{ascending:false}),
+    sb.from('fd_exam').select('id,title').eq('course_id',courseId)
+  ]).then(function(rs){
+    var list=$('ssIntgList'); if(!list){ return; }
+    if(rs[0].error){ list.innerHTML=errCard(rs[0].error.message); return; }
+    var rows=rs[0].data||[]; var titles={};
+    (rs[1].data||[]).forEach(function(e){ titles[e.id]=e.title; });
+    if(!rows.length){ list.innerHTML='<div class="card empty">No proctored quizzes or exams taken yet.</div>'; return; }
+    list.innerHTML='<table class="tbl" style="width:100%;"><tr><th align="left">Session</th><th>Flags</th><th align="left">Last activity</th><th></th></tr>'+rows.map(function(r){
+      var m=/^quiz-ch(\d+)-/.exec(r.exam_id||''); var label=m?('Chapter '+m[1]+' quiz'):(titles[r.exam_id]||r.exam_id);
+      return '<tr><td>'+esc(label)+'</td><td align="center">'+(r.violations||0)+'</td><td>'+esc(new Date(r.updated_at).toLocaleString())+'</td>'+
+        '<td><button class="btn btn-ghost btn-sm" data-intgx="'+esc(r.exam_id)+'">View</button></td></tr>';
+    }).join('')+'</table>';
+    Array.prototype.forEach.call(list.querySelectorAll('[data-intgx]'), function(b){ b.addEventListener('click', function(){
+      if(typeof MNProctor!=='undefined'){ MNProctor.renderIntegrityLog(b.getAttribute('data-intgx'), $('ssIntgBody')); }
+    }); });
+  }, function(){ var l=$('ssIntgList'); if(l){ l.innerHTML=errCard('Could not load the integrity log.'); } });
 }
 function savePlatform(patch, okMsg){
   patch.id=1; patch.updated_by=State.user.id;
@@ -7620,8 +7685,8 @@ function ensureProfileAndCourse() {
       }
       // The course a payment should be attributed to: a professor course if joined, else self-study.
       State.payCourseId = profRow ? profRow.course_id : (selfRow ? selfRow.course_id : null);
-      if (selfRow) { State.selfCourseId = selfRow.course_id; if(!State.payCourseId){ State.payCourseId = selfRow.course_id; } return null; }
-      if (anyRow) { State.selfCourseId = anyRow.course_id; if(!State.payCourseId){ State.payCourseId = anyRow.course_id; } return null; }
+      if (selfRow) { State.selfCourseId = selfRow.course_id; if(!State.payCourseId){ State.payCourseId = selfRow.course_id; } prefetchSelfStudyFlag(); return null; }
+      if (anyRow) { State.selfCourseId = anyRow.course_id; if(!State.payCourseId){ State.payCourseId = anyRow.course_id; } prefetchSelfStudyFlag(); return null; }
       // No ACTIVE enrollment. A self-study student who has started but not yet paid has a
       // private section waiting for payment: attribute the payment to it. Nothing is
       // created here -- the student starts self-study from the Home card.
@@ -8097,10 +8162,11 @@ function loadMyMaterials(){
       rows.forEach(function(m){
         html+='<div style="padding:9px 0;border-bottom:1px solid var(--border);">'+
           '<span style="margin-right:8px;font-size:16px;">'+matIcon(m.kind)+'</span>'+
-          '<a href="'+esc(m.url)+'" target="_blank" rel="noopener" style="color:var(--violet);text-decoration:none;font-size:15px;">'+esc(m.title)+'</a></div>';
+          matLink(m,'color:var(--violet);text-decoration:none;font-size:15px;')+'</div>';
       });
       html+='</div>';
       box.innerHTML=html;
+      wireMatBodies(box);
     });
   });
 }
@@ -8473,6 +8539,60 @@ function startGradedQuiz(chapter) {
     area.innerHTML = errCard('Quiz engine is not loaded. Please hard-refresh the page.');
     return;
   }
+  // Self-study courses run every graded quiz on camera with a stored integrity
+  // record; regular courses keep the light (no-webcam) proctoring.
+  var cid = State.payCourseId || State.selfCourseId;
+  if (!cid) { startGradedQuizSoft(chapter); return; }
+  // Known already (prefetched at sign-in): dispatch synchronously so the soft path
+  // keeps the click's user gesture for fullscreen.
+  if (State.courseSelfStudy && State.courseSelfStudy[cid] !== undefined) {
+    if (State.courseSelfStudy[cid]) { startGradedQuizCamera(chapter, cid); } else { startGradedQuizSoft(chapter); }
+    return;
+  }
+  area.innerHTML = '<div class="q-card"><span class="spinner"></span> &nbsp;Preparing your quiz…</div>';
+  sb.from('fd_course').select('is_self_study').eq('id', cid).maybeSingle().then(function(r){
+    State.courseSelfStudy = State.courseSelfStudy || {}; State.courseSelfStudy[cid] = !!(r && r.data && r.data.is_self_study);
+    if (State.courseSelfStudy[cid]) { startGradedQuizCamera(chapter, cid); }
+    else { area.innerHTML = ''; startGradedQuizSoft(chapter); }
+  }, function(){ area.innerHTML = ''; startGradedQuizSoft(chapter); });
+}
+
+function prefetchSelfStudyFlag() {
+  var cid = State.payCourseId || State.selfCourseId;
+  if (!cid) { return; }
+  State.courseSelfStudy = State.courseSelfStudy || {};
+  if (State.courseSelfStudy[cid] !== undefined) { return; }
+  sb.from('fd_course').select('is_self_study').eq('id', cid).maybeSingle().then(function(r){
+    if (r && !r.error) { State.courseSelfStudy[cid] = !!(r.data && r.data.is_self_study); }
+  }, function(){});
+}
+
+function startGradedQuizCamera(chapter, cid) {
+  var area = $('practiceArea');
+  if (typeof MNProctor === 'undefined' || !MNProctor.runConsent) {
+    area.innerHTML = errCard('This quiz is proctored on camera, but the monitoring component failed to load. Please hard-refresh the page; the quiz will not start unmonitored.');
+    return;
+  }
+  var cfg = { id: 'quiz-ch' + chapter + '-' + cid, course_id: cid, proctored: true, camera_mode: 'block', sessionLabel: 'quiz' };
+  window.__mnpUserId = State.user.id;
+  MNProctor.runConsent(cfg, area, function(){
+    area.innerHTML = '';
+    MNProctor.onAutoSubmit(function(){
+      var btns = area.querySelectorAll('button'); var sub = null;
+      Array.prototype.forEach.call(btns, function(b){ if (/^Submit/i.test((b.textContent || '').trim()) && !b.disabled) { sub = b; } });
+      if (sub) { sub.click(); }
+    });
+    MNProctor.start(cfg, State.user);
+    invalidateSchedule();
+    FDQuiz.quiz({ chapter: chapter, count: QUIZ_LEN }, area, {
+      onSubmit: function(res){ if (res && res.ok && !res.offline && MNProctor.isActive()) { MNProctor.finish(); } }
+    });
+  }, function(){ area.innerHTML = ''; });
+}
+
+function startGradedQuizSoft(chapter) {
+  if (!chapter) { return; }
+  var area = $('practiceArea');
   // Soft-proctoring notice (chapter quizzes are lightly proctored, no webcam).
   var ready = window.confirm('This is a graded quiz for Chapter ' + chapter + '.\n\n\u2022 It runs in fullscreen; leaving the tab or exiting fullscreen is recorded.\n\u2022 No webcam is used.\n\u2022 Answers are graded after you submit and are not shown during the quiz.\n\nStart now?');
   if (!ready) { return; }
