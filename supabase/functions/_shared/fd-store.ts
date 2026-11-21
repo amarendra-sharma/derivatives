@@ -35,7 +35,7 @@ export class FdSupabaseStore extends SupabaseStore {
     if (isStaff) return { allowed: true, isStaff: true, ...base };
 
     const enr = await this.one(this.db.from("fd_enrollment").select("status").eq("course_id", courseId).eq("user_id", userId).maybeSingle());
-    if (!enr || enr.status !== "active") return { allowed: false, reason: "not_enrolled", isStaff: false, ...base };
+    if (!enr || (enr.status !== "active" && enr.status !== "comped")) return { allowed: false, reason: "not_enrolled", isStaff: false, ...base };
     if (!course.is_active) return { allowed: false, reason: "inactive", isStaff: false, ...base };
     const today = dateOnly(now);
     if ((course.access_starts && today < course.access_starts) || (course.access_ends && today > course.access_ends)) return { allowed: false, reason: "expired", isStaff: false, ...base };
@@ -44,6 +44,14 @@ export class FdSupabaseStore extends SupabaseStore {
 
   /** Stored AI keys live in the shared it_ai_keys table (owner = an administrator's account id, which is the same auth user in both portals). */
   async platformKeyOwner(): Promise<string | null> {
+    // An account named in fd_platform_setting.ai_key_owner (set by the administrator) pays for platform-paid courses, such as
+    // self-study, when it has a saved key; otherwise the first administrator with a saved key does.
+    const ps = await this.db.from("fd_platform_setting").select("ai_key_owner").order("id", { ascending: true }).limit(1);
+    const named = !ps.error && ps.data && ps.data[0] ? (ps.data[0] as { ai_key_owner: string | null }).ai_key_owner : null;
+    if (named) {
+      const k = await this.db.from("it_ai_keys").select("owner_id").eq("owner_id", named).limit(1);
+      if (!k.error && k.data && k.data.length) return named;
+    }
     const admins = await this.db.from("fd_person").select("user_id").eq("role", "admin");
     if (admins.error) throw new Error("db: platform key lookup failed");
     const ids = (admins.data ?? []).map((r: { user_id: string }) => r.user_id);

@@ -439,6 +439,7 @@
       <h1 class="page-title" id="welcomeTitle">Welcome back</h1>
       <div class="page-sub">Your Financial Derivatives workspace. Pick up where you left off.</div>
       <div id="homeNameCard"></div>
+      <div id="homeSelfStudy"></div>
       <div class="stat-row" id="homeStats"></div>
       <div class="grid grid-3" id="homeQuick"></div>
       <div id="homeDeadlines"></div>
@@ -1383,7 +1384,8 @@ function loadCourses(){
     ? sb.from('fd_course').select('*').order('created_at',{ascending:false})
     : sb.from('fd_course').select('*').eq('owner_id', State.user.id).order('created_at',{ascending:false});
   return q.then(function(res){
-    State.courses = res.data ? res.data : [];
+    // Self-study sections (one per student, owned by the administrator) are listed in Platform > Self-study, not in the picker.
+    State.courses = (res.data ? res.data : []).filter(function(c){ return !c.is_self_study || c.id === State.ssOpenCourse; });
     var ownerNames = {};
     var finish = function(){
       var sel=$('coursePick'); sel.innerHTML='';
@@ -7232,9 +7234,10 @@ function renderPlatform(host){
     '<div class="field"><label>Notify email (where new professor requests are sent)</label><input id="pfNotify" value="'+esc(s.notify_email||'')+'" placeholder="you@macronations.com"></div>'+
     '<button class="btn btn-primary" id="pfSavePricing">Save pricing</button></div>'+
     '<div class="card" style="max-width:680px;margin-bottom:18px;"><h3>Self-study course</h3>'+
-    '<div style="font-size:12.5px;color:var(--text-muted);margin-bottom:12px;">When on, students who aren\u2019t enrolled in a professor\u2019s course are placed into the platform self-study course so they can read, practice, and take quizzes on their own. Turn it off to close self-study for everyone at once.</div>'+
+    '<div style="font-size:12.5px;color:var(--text-muted);margin-bottom:12px;">When on, any student can buy the self-study course: after paying, the student chooses the course length and the live-class schedule, and Asha teaches a private section on that schedule, fully automatically. Only the administrator can see these sections; professors never get them. Turning this off stops new self-study sign-ups; students already enrolled continue.</div>'+
     '<label style="display:flex;align-items:center;gap:10px;font-size:14px;cursor:pointer;"><input type="checkbox" id="pfSelfStudy"'+((s.self_study_enabled===false)?'':' checked')+' style="width:auto;"> Self-study is available platform-wide</label>'+
     '<button class="btn btn-primary" id="pfSaveSelfStudy" style="margin-top:12px;">Save</button></div>'+
+    '<div class="card" style="max-width:980px;margin-bottom:18px;"><h3>Self-study students</h3><div id="pfSSKey" style="font-size:13px;margin-bottom:12px;"></div><div id="pfSSList" style="font-size:13px;">Loading\u2026</div></div>'+
     '<div class="card" style="max-width:680px;"><h3>Author bio &amp; photo</h3><div style="font-size:12.5px;color:var(--text-muted);margin-bottom:14px;">Shown on the textbook’s “About the Author” page.</div>'+
     '<div class="field"><label>Author name</label><input id="pfName" value="'+esc(s.author_name||'')+'"></div>'+
     '<div class="field"><label>Subtitle (optional — leave blank to keep the founder line)</label><input id="pfSub" value="'+esc(s.author_subtitle||'')+'"></div>'+
@@ -7248,9 +7251,51 @@ function renderPlatform(host){
   $('pfSaveBio').addEventListener('click', function(){
     savePlatform({ author_name:$('pfName').value.trim(), author_subtitle:$('pfSub').value.trim(), author_photo_url:$('pfPhoto').value.trim(), author_bio_html:$('pfBio').value.trim() }, 'Bio saved.');
   });
+  loadSelfStudyAdmin();
   if($('pfSaveSelfStudy')){ $('pfSaveSelfStudy').addEventListener('click', function(){
     savePlatform({ self_study_enabled: $('pfSelfStudy').checked }, $('pfSelfStudy').checked?'Self-study turned on for everyone.':'Self-study turned off for everyone.');
   }); }
+}
+function loadSelfStudyKey(){
+  var host=$('pfSSKey'); if(!host){ return; }
+  sb.rpc('fd_selfstudy_key_owner_get').then(function(r){
+    var d=r&&r.data?r.data:{};
+    host.innerHTML='<div><b>Asha\u2019s AI key for self-study is billed to:</b> '+(d.owner?esc(d.email||d.owner)+(d.has_key?' <span class="tag green">key saved</span>':' <span class="tag amber">no key saved</span>'):'<span class="tag amber">not set</span>')+'</div>'+
+      '<div style="display:flex;gap:8px;align-items:center;margin-top:6px;"><input id="pfSSKeyEmail" placeholder="email of the account whose saved key should pay" style="max-width:340px;"><button class="btn btn-ghost btn-sm" id="pfSSKeySave">Change</button><span id="pfSSKeyMsg" class="msg"></span></div>';
+    $('pfSSKeySave').addEventListener('click', function(){
+      sb.rpc('fd_selfstudy_key_owner_set',{p_email:$('pfSSKeyEmail').value}).then(function(x){
+        var y=x&&x.data?x.data:{}; var m=$('pfSSKeyMsg');
+        if(x.error||y.ok===false){ m.className='msg err'; m.textContent=x.error?x.error.message:(y.reason==='no_key'?'That account has no saved AI key yet; save one in its AI Instructor settings first.':'No account with that email.'); return; }
+        loadSelfStudyKey();
+      });
+    });
+  });
+}
+function loadSelfStudyAdmin(){
+  loadSelfStudyKey();
+  var host=$('pfSSList'); if(!host){ return; }
+  sb.rpc('fd_selfstudy_admin_list').then(function(r){
+    if(r.error){ host.textContent=r.error.message; return; }
+    var rows=r.data||[];
+    if(!rows.length){ host.innerHTML='<div class="muted">No self-study students yet.</div>'; return; }
+    var lab={awaiting_payment:'Awaiting payment',awaiting_setup:'Paid — choosing schedule',active:'Active',completed:'Completed',cancelled:'Cancelled'};
+    host.innerHTML='<table class="tbl" style="width:100%;"><tr><th align="left">Student</th><th align="left">Status</th><th>Weeks</th><th>Classes held</th><th align="left">Next class</th><th align="left">Ends</th><th></th></tr>'+
+      rows.map(function(x){
+        return '<tr><td>'+esc(x.name||x.email||x.student_id)+(x.email&&x.name?'<div class="muted" style="font-size:11.5px;">'+esc(x.email)+'</div>':'')+'</td>'+
+          '<td>'+esc(lab[x.status]||x.status)+(x.paid_by?'<div class="muted" style="font-size:11.5px;">'+esc(x.paid_by==='admin'?'comped':(x.paid_by==='waiver'?'fee waived':'Stripe'))+'</div>':'')+'</td>'+
+          '<td align="center">'+(x.weeks||'—')+'</td><td align="center">'+(x.classes?(x.held+' / '+x.classes):'—')+'</td>'+
+          '<td>'+(x.next_at?esc(new Date(x.next_at).toLocaleString()):'—')+'</td><td>'+(x.ends_at?esc(new Date(x.ends_at).toLocaleDateString()):'—')+'</td>'+
+          '<td style="white-space:nowrap;">'+(x.status==='awaiting_payment'?'<button class="btn btn-ghost btn-sm" data-sscomp="'+x.course_id+'">Comp (free)</button> ':'')+
+          (x.status==='active'&&!x.held?'<button class="btn btn-ghost btn-sm" data-ssreset="'+x.course_id+'">Let student reschedule</button> ':'')+
+          '<button class="btn btn-ghost btn-sm" data-ssopen="'+x.course_id+'">Open</button></td></tr>';
+      }).join('')+'</table>';
+    Array.prototype.forEach.call(host.querySelectorAll('[data-sscomp]'), function(b){ b.addEventListener('click', function(){ sb.rpc('fd_selfstudy_admin_comp',{p_course:b.getAttribute('data-sscomp')}).then(loadSelfStudyAdmin); }); });
+    Array.prototype.forEach.call(host.querySelectorAll('[data-ssreset]'), function(b){ b.addEventListener('click', function(){ sb.rpc('fd_selfstudy_admin_reset',{p_course:b.getAttribute('data-ssreset')}).then(loadSelfStudyAdmin); }); });
+    Array.prototype.forEach.call(host.querySelectorAll('[data-ssopen]'), function(b){ b.addEventListener('click', function(){
+      State.ssOpenCourse=b.getAttribute('data-ssopen'); State.teachCourseId=State.ssOpenCourse;
+      loadCourses().then(function(){ var sel=$('coursePick'); if(sel){ sel.value=State.ssOpenCourse; } switchView('gradebook'); });
+    }); });
+  }, function(){ host.textContent='Could not load self-study students.'; });
 }
 function savePlatform(patch, okMsg){
   patch.id=1; patch.updated_by=State.user.id;
@@ -7439,6 +7484,10 @@ function resolveAccess() {
 function chapterLocked(n) { if (State.hasAccess) { return false; } return !FREE_CHAPTERS[n]; }
 function arenaLocked(slug) { if (State.hasAccess) { return false; } return !FREE_ARENAS[slug]; }
 function openSubscribePrompt(whatLabel) {
+  if (State.user && !State.payCourseId && State.role !== 'professor' && State.role !== 'admin' && State.settings && State.settings.self_study_enabled !== false) {
+    // A student with no course pays through self-study, so the payment is matched to a section.
+    switchView('home'); return;
+  }
   // Ensure platform settings (price + stripe link) are loaded before we decide
   // whether to show the link or the "not configured" message. Without this, a
   // slow/never-run settings load makes every Subscribe click say "not configured".
@@ -7573,27 +7622,17 @@ function ensureProfileAndCourse() {
       State.payCourseId = profRow ? profRow.course_id : (selfRow ? selfRow.course_id : null);
       if (selfRow) { State.selfCourseId = selfRow.course_id; if(!State.payCourseId){ State.payCourseId = selfRow.course_id; } return null; }
       if (anyRow) { State.selfCourseId = anyRow.course_id; if(!State.payCourseId){ State.payCourseId = anyRow.course_id; } return null; }
-      // No ACTIVE enrollment (e.g., dropped from the only course): put the student
-      // into THE single platform self-study course -- but only if the super-admin
-      // has self-study enabled platform-wide.
-      if (State.settings && State.settings.self_study_enabled === false) {
-        State.selfCourseId = null;
+      // No ACTIVE enrollment. A self-study student who has started but not yet paid has a
+      // private section waiting for payment: attribute the payment to it. Nothing is
+      // created here -- the student starts self-study from the Home card.
+      State.selfCourseId = null;
+      if (State.settings && State.settings.self_study_enabled === false) { return null; }
+      return sb.rpc('fd_selfstudy_status').then(function(ss) {
+        var d = ss && ss.data ? ss.data : null;
+        State.selfStudy = d;
+        if (d && d.course_id && !State.payCourseId) { State.payCourseId = d.course_id; }
         return null;
-      }
-      return sb.from('fd_course').select('id').eq('is_self_study', true).limit(1).maybeSingle().then(function(ss) {
-        if (!ss || !ss.data) {
-          // The admin has not created the self-study course yet. Leave the student
-          // without one rather than inventing a personal course.
-          State.selfCourseId = null;
-          return null;
-        }
-        State.selfCourseId = ss.data.id;
-        if (!State.payCourseId) { State.payCourseId = ss.data.id; }
-        return sb.from('fd_enrollment').upsert(
-          { course_id: ss.data.id, student_id: uid, status: 'active' },
-          { onConflict: 'course_id,student_id' }
-        );
-    });
+      }, function(){ return null; });
     });
   });
 }
@@ -7782,6 +7821,161 @@ function renderArenas() {
   }
 }
 
+/* ====================================================================
+   SELF-STUDY WITH ASHA (students). Each paying self-study student gets a
+   private section, owned by the administrator, that Asha teaches on the
+   schedule the student chooses. Server: fd_selfstudy_* RPCs (migration fd_09).
+   ==================================================================== */
+var SS_DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+function ssFmt(ts, tz){
+  try { return new Date(ts).toLocaleString(undefined, { weekday:'short', month:'short', day:'numeric', hour:'numeric', minute:'2-digit', timeZone: tz || undefined }); }
+  catch(e){ return new Date(ts).toLocaleString(); }
+}
+function ssFmtDate(ts, tz){
+  try { return new Date(ts).toLocaleDateString(undefined, { month:'long', day:'numeric', year:'numeric', timeZone: tz || undefined }); }
+  catch(e){ return new Date(ts).toLocaleDateString(); }
+}
+function ssPayLink(st){
+  var base = State.settings ? State.settings.stripe_link : '';
+  if(!base || !State.user || !st.course_id){ return ''; }
+  var sep = (base.indexOf('?') >= 0) ? '&' : '?';
+  return base + sep + 'client_reference_id=' + encodeURIComponent(State.user.id + '__' + st.course_id) + '&prefilled_email=' + encodeURIComponent(State.user.email || '');
+}
+function ssReason(r, d){
+  var m = {
+    not_paid: 'Your payment has not been confirmed yet.',
+    already_started: 'Your first class has already taken place, so the schedule can no longer be changed. Ask the administrator if you need a change.',
+    bad_weeks: 'Choose one of the durations listed.', bad_minutes: 'Choose a class length between 30 and 120 minutes.',
+    bad_tz: 'That time zone was not recognized.', bad_time: 'Enter a valid start time.', bad_days: 'Choose at least one day of the week.',
+    bad_start: 'The first day must be between today and 30 days from now.',
+    too_few_classes: 'This schedule gives only ' + (d && d.classes != null ? d.classes : 'a few') + ' live classes; at least 12 are needed to cover the 18 chapters. Add a day per week or choose a longer duration.',
+    too_many_classes: 'This schedule gives more than 120 classes; choose fewer days per week or a shorter duration.',
+    disabled: 'Self-study is not open at the moment.', staff: 'Instructor and administrator accounts cannot enroll in self-study; use a student account.',
+    no_admin: 'Self-study is not configured yet.', closed: 'This self-study course has ended.'
+  };
+  return m[r] || ('Something went wrong (' + r + ').');
+}
+function ssCountClasses(weeks, startStr, days, timeStr, tz){
+  if(!startStr || !days.length){ return 0; }
+  var p = startStr.split('-'), start = new Date(Date.UTC(+p[0], +p[1]-1, +p[2])), n = 0, now = Date.now(), last = weeks*7 - 7, i;
+  for(i = 0; i <= last; i++){
+    var d = new Date(start.getTime() + i*86400000);
+    if(days.indexOf(d.getUTCDay()) < 0){ continue; }
+    if(i === 0){ var hm = (timeStr||'00:00').split(':'); var t = new Date(); t.setHours(+hm[0], +hm[1], 0, 0); if(startStr === ssToday() && t.getTime() < now + 15*60000){ continue; } }
+    n++;
+  }
+  return n;
+}
+function ssToday(){ var d = new Date(); return d.getFullYear() + '-' + ('0'+(d.getMonth()+1)).slice(-2) + '-' + ('0'+d.getDate()).slice(-2); }
+function ssAddDays(s, k){ var p = s.split('-'); var d = new Date(+p[0], +p[1]-1, +p[2] + k); return d.getFullYear() + '-' + ('0'+(d.getMonth()+1)).slice(-2) + '-' + ('0'+d.getDate()).slice(-2); }
+function loadSelfStudyCard(){
+  var host = $('homeSelfStudy'); if(!host){ return; }
+  if(State.guest || !State.user || State.role === 'professor' || State.role === 'admin'){ host.innerHTML = ''; return; }
+  sb.rpc('fd_selfstudy_status').then(function(res){
+    var st = res && res.data ? res.data : null;
+    if(!st || res.error){ host.innerHTML = ''; return; }
+    State.selfStudy = st;
+    renderSelfStudyCard(host, st);
+  }, function(){ host.innerHTML = ''; });
+}
+function renderSelfStudyCard(host, st){
+  var price = st.price_cents ? money(st.price_cents, st.currency || 'usd') : '';
+  var head = '<div class="card" style="margin-bottom:18px;border-left:4px solid var(--accent);">';
+  if(st.status === 'none'){
+    if(!st.enabled || State.selfCourseId){ host.innerHTML = ''; return; }   // already in a professor's course
+    host.innerHTML = head + '<div class="c-eyebrow">Self-study</div><h3 style="margin:4px 0 8px;">Take the whole course with Asha, your AI professor</h3>' +
+      '<p style="color:var(--text-muted);font-size:14px;margin:0 0 12px;">You choose how many weeks the course lasts and when your live classes meet. Asha then teaches every chapter in live classes on your schedule, sets your quiz and arena deadlines, runs the midterm and final, grades your work, and answers questions at any hour. All 18 chapters and 16 arenas are included' + (price ? ', for ' + esc(price) : '') + '.</p>' +
+      '<button class="btn btn-primary" id="ssStart">Start self-study</button> <span id="ssMsg" class="msg" style="display:inline-block;margin-left:8px;"></span></div>';
+    $('ssStart').addEventListener('click', function(){
+      $('ssStart').disabled = true;
+      sb.rpc('fd_selfstudy_start').then(function(r){
+        var d = r && r.data ? r.data : {};
+        if(r.error || d.ok === false){ $('ssStart').disabled = false; var e = $('ssMsg'); e.className = 'msg err'; e.textContent = r.error ? r.error.message : ssReason(d.reason, d); return; }
+        State.payCourseId = d.course_id; renderSelfStudyCard(host, d);
+      });
+    });
+    return;
+  }
+  if(st.status === 'awaiting_payment'){
+    var link = ssPayLink(st);
+    if(!State.settings || !State.settings.stripe_link){ loadPlatformSettings().then(function(){ renderSelfStudyCard(host, st); }); }
+    host.innerHTML = head + '<div class="c-eyebrow">Self-study · step 1 of 2</div><h3 style="margin:4px 0 8px;">Pay the course fee</h3>' +
+      '<p style="color:var(--text-muted);font-size:14px;margin:0 0 12px;">After payment you will choose your course length and your live-class times. Payments are confirmed automatically, usually within an hour.</p>' +
+      (link ? '<a class="btn btn-primary" href="' + esc(link) + '" target="_blank" rel="noopener">Pay ' + esc(price || 'now') + '</a> ' : '<div class="msg err" style="display:block;">The payment link is not configured yet.</div>') +
+      '<button class="btn btn-ghost" id="ssCheck">I have paid — check now</button> <span id="ssMsg" class="msg" style="display:inline-block;margin-left:8px;"></span></div>';
+    $('ssCheck').addEventListener('click', function(){
+      $('ssCheck').disabled = true;
+      sb.rpc('fd_selfstudy_check_payment').then(function(r){
+        $('ssCheck').disabled = false;
+        var d = r && r.data ? r.data : {};
+        if(d.status && d.status !== 'awaiting_payment'){ resolveAccess().then(function(){ return ensureProfileAndCourse(); }).then(function(){ renderSelfStudyCard(host, d); renderChapters(); renderArenas(); }); return; }
+        var e = $('ssMsg'); e.className = 'msg'; e.textContent = 'Not confirmed yet. Payments usually appear within an hour; this page also checks for you.';
+      });
+    });
+    return;
+  }
+  if(st.status === 'awaiting_setup' || (st.status === 'active' && host.getAttribute('data-edit') === '1')){
+    renderSelfStudyWizard(host, st); return;
+  }
+  if(st.status === 'active'){
+    var dayNames = (st.days || []).map(function(x){ return SS_DAYS[x]; }).join(', ');
+    host.innerHTML = head + '<div class="c-eyebrow">Self-study with Asha</div><h3 style="margin:4px 0 8px;">' + esc(st.weeks + '-week course · ' + st.classes + ' live classes') + '</h3>' +
+      '<div style="font-size:14px;line-height:1.7;">' +
+      (st.next_at ? '<div><b>Next live class:</b> ' + esc(st.next_title || '') + ' — ' + esc(ssFmt(st.next_at, st.tz)) + '</div>' : '') +
+      '<div><b>Class times:</b> ' + esc(dayNames) + ' at ' + esc(st.start_local) + ' (' + esc(st.tz) + '), ' + esc(String(st.minutes)) + ' minutes</div>' +
+      (st.midterm ? '<div><b>Midterm:</b> ' + esc(ssFmt(st.midterm.opens, st.tz)) + ' – ' + esc(ssFmt(st.midterm.closes, st.tz)) + '</div>' : '') +
+      (st.final ? '<div><b>Final:</b> ' + esc(ssFmt(st.final.opens, st.tz)) + ' – ' + esc(ssFmt(st.final.closes, st.tz)) + '</div>' : '') +
+      '<div><b>Course ends:</b> ' + esc(ssFmtDate(st.ends_at, st.tz)) + '</div><div class="muted" style="font-size:12px;">Times are shown in ' + esc(st.tz) + '.</div></div>' +
+      '<p style="color:var(--text-muted);font-size:13px;margin:10px 0 0;">Open the AI Instructor at class time to join Asha’s live class. Read each chapter before its class; quizzes and arenas are due three days after the chapter is finished.</p>' +
+      (!st.started ? '<button class="btn btn-ghost btn-sm" id="ssEdit" style="margin-top:10px;">Change my schedule</button>' : '') + '</div>';
+    if($('ssEdit')){ $('ssEdit').addEventListener('click', function(){ host.setAttribute('data-edit', '1'); renderSelfStudyCard(host, st); }); }
+    return;
+  }
+  host.innerHTML = head + '<div class="c-eyebrow">Self-study with Asha</div><h3 style="margin:4px 0 8px;">Your self-study course has ended</h3><p style="color:var(--text-muted);font-size:14px;margin:0;">Your grades remain available under My progress.</p></div>';
+}
+function renderSelfStudyWizard(host, st){
+  var tz = st.tz || ((typeof Intl !== 'undefined' && Intl.DateTimeFormat) ? Intl.DateTimeFormat().resolvedOptions().timeZone : 'UTC');
+  var today = ssToday(), weeks = st.weeks || 8, days = st.days || [1, 3], startT = st.start_local || '19:00', mins = st.minutes || 60;
+  var startD = st.starts_on && st.starts_on >= today ? st.starts_on : ssAddDays(today, 1);
+  var wk = [4, 6, 8, 10, 12, 16].map(function(w){ return '<option value="' + w + '"' + (w === weeks ? ' selected' : '') + '>' + w + ' weeks</option>'; }).join('');
+  var mn = [30, 45, 60, 75, 90, 120].map(function(m){ return '<option value="' + m + '"' + (m === mins ? ' selected' : '') + '>' + m + ' minutes</option>'; }).join('');
+  var dy = SS_DAYS.map(function(n, i){ return '<label style="display:inline-flex;align-items:center;gap:4px;margin-right:10px;font-size:14px;cursor:pointer;"><input type="checkbox" class="ssDay" value="' + i + '"' + (days.indexOf(i) >= 0 ? ' checked' : '') + ' style="width:auto;">' + n + '</label>'; }).join('');
+  host.innerHTML = '<div class="card" style="margin-bottom:18px;border-left:4px solid var(--accent);"><div class="c-eyebrow">Self-study · step 2 of 2</div>' +
+    '<h3 style="margin:4px 0 8px;">Choose your course length and live-class schedule</h3>' +
+    '<p style="color:var(--text-muted);font-size:14px;margin:0 0 12px;">Asha spreads the 18 chapters over your classes, with the last week kept for the final exam. Classes are live with Asha; you can ask questions during class and at any other time.</p>' +
+    '<div class="row2"><div class="field"><label>Course length</label><select id="ssWeeks">' + wk + '</select></div>' +
+    '<div class="field"><label>First day</label><input type="date" id="ssStartD" min="' + today + '" max="' + ssAddDays(today, 30) + '" value="' + startD + '"></div></div>' +
+    '<div class="field"><label>Class days</label><div>' + dy + '</div></div>' +
+    '<div class="row2"><div class="field"><label>Class start time</label><input type="time" id="ssTime" value="' + esc(startT) + '"></div>' +
+    '<div class="field"><label>Class length</label><select id="ssMins">' + mn + '</select></div></div>' +
+    '<div class="field"><label>Time zone</label><input id="ssTz" value="' + esc(tz) + '" placeholder="e.g. America/New_York"></div>' +
+    '<div id="ssPreview" style="font-size:14px;margin:6px 0 12px;"></div>' +
+    '<button class="btn btn-primary" id="ssConfirm">Confirm my schedule</button>' +
+    (st.status === 'active' ? ' <button class="btn btn-ghost" id="ssCancelEdit">Keep my current schedule</button>' : '') +
+    ' <span id="ssMsg" class="msg" style="display:inline-block;margin-left:8px;"></span></div>';
+  function chosenDays(){ var out = []; Array.prototype.forEach.call(host.querySelectorAll('.ssDay'), function(c){ if(c.checked){ out.push(+c.value); } }); return out; }
+  function preview(){
+    var w = +$('ssWeeks').value, n = ssCountClasses(w, $('ssStartD').value, chosenDays(), $('ssTime').value, $('ssTz').value);
+    var ok = n >= 12 && n <= 120;
+    $('ssPreview').innerHTML = (ok ? '✅ ' : '⚠️ ') + '<b>' + n + ' live classes</b> of ' + $('ssMins').value + ' minutes over ' + w + ' weeks' +
+      (n < 12 ? ' — at least 12 are needed; add a day or choose a longer course.' : (n >= 24 ? ', including a midterm review and a final review.' : '.'));
+    $('ssConfirm').disabled = !ok;
+  }
+  Array.prototype.forEach.call(host.querySelectorAll('select,input'), function(el){ el.addEventListener('change', preview); el.addEventListener('input', preview); });
+  preview();
+  if($('ssCancelEdit')){ $('ssCancelEdit').addEventListener('click', function(){ host.removeAttribute('data-edit'); renderSelfStudyCard(host, st); }); }
+  $('ssConfirm').addEventListener('click', function(){
+    $('ssConfirm').disabled = true;
+    var e = $('ssMsg'); e.className = 'msg'; e.textContent = 'Asha is preparing your course…';
+    sb.rpc('fd_selfstudy_configure', { p_weeks: +$('ssWeeks').value, p_start_date: $('ssStartD').value, p_days: chosenDays(), p_start: $('ssTime').value, p_minutes: +$('ssMins').value, p_tz: $('ssTz').value.trim() }).then(function(r){
+      var d = r && r.data ? r.data : {};
+      if(r.error || d.ok === false){ $('ssConfirm').disabled = false; e.className = 'msg err'; e.textContent = r.error ? r.error.message : ssReason(d.reason, d); return; }
+      host.removeAttribute('data-edit');
+      ensureProfileAndCourse().then(function(){ renderSelfStudyCard(host, d); try{ loadHomeDeadlines(); }catch(x){} });
+    });
+  });
+}
+
 function loadHome() {
   if (State.guest) {
     if($('welcomeTitle')){ $('welcomeTitle').textContent = 'Welcome — free preview'; }
@@ -7811,6 +8005,7 @@ function loadHome() {
   if (!State.user) { return; }
   var uid = State.user.id;
   renderHomeNameCard();
+  try { loadSelfStudyCard(); } catch (e) {}
   // counts: graded attempts, correct, arenas played
   Promise.all([
     sb.from('fd_exam_attempt').select('is_correct', { count: 'exact' }).eq('student_id', uid).not('graded_at','is',null),
